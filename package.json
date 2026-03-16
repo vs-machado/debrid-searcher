@@ -1,0 +1,24 @@
+{
+  "name": "debrid_downloader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install:all": "npm install && npm --prefix web install && npm --prefix server install",
+    "dev": "concurrently -n web,server -c blue,green \"npm --prefix web run dev\" \"npm --prefix server run dev\"",
+    "build": "npm --prefix web run build && npm --prefix server run build",
+    "start": "npm --prefix server run start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "private": true,
+  "workspaces": [
+    "web",
+    "server"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
