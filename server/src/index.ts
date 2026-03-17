@@ -34,6 +34,33 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v)
 }
 
+function findTorrentId(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (!v) return undefined
+  if (isRecord(v)) {
+    const direct = (v as any).torrent_id ?? (v as any).torrentId ?? (v as any).id
+    const n = typeof direct === 'string' ? Number(direct) : direct
+    if (typeof n === 'number' && Number.isFinite(n)) return n
+
+    // Common TorBox envelope { data: { torrent_id } }
+    const cands = [(v as any).data, (v as any).result, (v as any).response, (v as any).payload]
+    for (const c of cands) {
+      const got = findTorrentId(c)
+      if (got !== undefined) return got
+    }
+  }
+  return undefined
+}
+
+function unwrapStandardData(v: unknown): unknown {
+  if (!isRecord(v)) return v
+  const cands = [(v as any).data, (v as any).result, (v as any).results, (v as any).response, (v as any).payload]
+  for (const c of cands) {
+    if (c !== undefined) return unwrapStandardData(c)
+  }
+  return v
+}
+
 function asArray(v: unknown): unknown[] {
   return Array.isArray(v) ? v : []
 }
@@ -178,6 +205,68 @@ app.post('/api/torbox/add', async (req: Request, res: Response) => {
     const client = torboxClient({ baseUrl: env.torboxBaseUrl, apiKey: env.torboxApiKey })
     const torbox = await client.createTorrentFromMagnet(body.magnet, body.addOnlyIfCached)
     res.json({ ok: true, detail: 'Created torrent in TorBox.', torbox })
+  } catch (e) {
+    res.status(502).json({ ok: false, detail: e instanceof Error ? e.message : String(e) })
+  }
+})
+
+app.post('/api/torbox/download', async (req: Request, res: Response) => {
+  const body = z
+    .object({
+      magnet: z.string().min(1),
+      infoHash: z.string().trim().min(8).optional(),
+      addOnlyIfCached: z.boolean().optional().default(true),
+      zipLink: z.boolean().optional().default(true),
+    })
+    .parse(req.body)
+
+  if (!env.torboxApiKey) {
+    return res.status(400).json({ ok: false, detail: 'TORBOX_API_KEY is not set' })
+  }
+
+  const client = torboxClient({ baseUrl: env.torboxBaseUrl, apiKey: env.torboxApiKey })
+
+  let torrentId: number | undefined
+  let createErr: unknown = null
+  try {
+    const created = await client.createTorrentFromMagnet(body.magnet, body.addOnlyIfCached)
+    torrentId = findTorrentId(created)
+  } catch (e) {
+    createErr = e
+  }
+
+  // If create failed (often due to duplicates), try to locate it by hash in the user's list.
+  if (torrentId === undefined && body.infoHash) {
+    try {
+      const list = await client.getTorrentList({ bypassCache: true, limit: 200, offset: 0 })
+      const items = unwrapStandardData(list)
+      if (Array.isArray(items)) {
+        const want = body.infoHash.trim().toLowerCase()
+        for (const it of items) {
+          if (!isRecord(it)) continue
+          const h = typeof (it as any).hash === 'string' ? (it as any).hash.trim().toLowerCase() : ''
+          if (h && h === want) {
+            const id = findTorrentId(it)
+            if (id !== undefined) {
+              torrentId = id
+              break
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore fallback errors; surface the original create error below
+    }
+  }
+
+  if (torrentId === undefined) {
+    const msg = createErr instanceof Error ? createErr.message : String(createErr || 'Failed to create torrent in TorBox')
+    return res.status(502).json({ ok: false, detail: msg })
+  }
+
+  try {
+    const url = await client.requestTorrentDownloadLink({ torrentId, zipLink: body.zipLink, redirect: false })
+    res.json({ ok: true, detail: 'Download link ready.', url, torrentId })
   } catch (e) {
     res.status(502).json({ ok: false, detail: e instanceof Error ? e.message : String(e) })
   }

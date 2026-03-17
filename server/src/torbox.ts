@@ -3,6 +3,21 @@ export type TorboxClientOpts = {
   apiKey: string
 }
 
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v)
+}
+
+function unwrapStandardData(v: unknown): unknown {
+  // TorBox uses a fairly standard envelope: { success, error, detail, data }
+  // but some tooling wraps data further. Unwrap a few common shapes.
+  if (!isRecord(v)) return v
+  const cands = [v.data, (v as any).result, (v as any).results, (v as any).response, (v as any).payload]
+  for (const c of cands) {
+    if (c !== undefined) return unwrapStandardData(c)
+  }
+  return v
+}
+
 function authHeaders(apiKey: string) {
   return { authorization: `Bearer ${apiKey}` }
 }
@@ -210,6 +225,63 @@ export function torboxClient(opts: TorboxClientOpts) {
         throw new Error(String(detail))
       }
       return data
+    },
+
+    async getTorrentList(params?: { id?: number; offset?: number; limit?: number; bypassCache?: boolean }) {
+      const url = new URL(`${base}/v1/api/torrents/mylist`)
+      // Docs show token as a query param; we also send Bearer for compatibility.
+      url.searchParams.set('token', opts.apiKey)
+      if (params?.bypassCache !== undefined) url.searchParams.set('bypass_cache', String(params.bypassCache))
+      if (params?.id !== undefined) url.searchParams.set('id', String(params.id))
+      if (params?.offset !== undefined) url.searchParams.set('offset', String(params.offset))
+      if (params?.limit !== undefined) url.searchParams.set('limit', String(params.limit))
+
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: authHeaders(opts.apiKey),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as unknown
+      if (!res.ok) {
+        const detail = (data as any)?.detail || (data as any)?.error || `${res.status} ${res.statusText}`
+        throw new Error(String(detail))
+      }
+      return data
+    },
+
+    async requestTorrentDownloadLink(params: {
+      torrentId: number
+      fileId?: number
+      zipLink?: boolean
+      redirect?: boolean
+      appendName?: boolean
+      userIp?: string
+    }) {
+      const url = new URL(`${base}/v1/api/torrents/requestdl`)
+      // Docs require token as a parameter.
+      url.searchParams.set('token', opts.apiKey)
+      url.searchParams.set('torrent_id', String(params.torrentId))
+      if (params.fileId !== undefined) url.searchParams.set('file_id', String(params.fileId))
+      if (params.zipLink !== undefined) url.searchParams.set('zip_link', String(params.zipLink))
+      if (params.userIp) url.searchParams.set('user_ip', params.userIp)
+      if (params.redirect !== undefined) url.searchParams.set('redirect', String(params.redirect))
+      if (params.appendName !== undefined) url.searchParams.set('append_name', String(params.appendName))
+
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: authHeaders(opts.apiKey),
+      })
+
+      const json = (await res.json().catch(() => ({}))) as unknown
+      if (!res.ok) {
+        const detail = (json as any)?.detail || (json as any)?.error || `${res.status} ${res.statusText}`
+        throw new Error(String(detail))
+      }
+
+      const data = unwrapStandardData(json)
+      const dl = typeof data === 'string' ? data : undefined
+      if (!dl) throw new Error('TorBox did not return a download link.')
+      return dl
     },
   }
 }

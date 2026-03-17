@@ -25,6 +25,13 @@ type AddResponse = {
   torbox?: unknown
 }
 
+type DownloadResponse = {
+  ok: boolean
+  detail?: string
+  url?: string
+  torrentId?: number
+}
+
 function esc(s: string) {
   return s.replace(/[&<>"]/g, (ch) => {
     switch (ch) {
@@ -123,7 +130,7 @@ export function mountApp(root: HTMLDivElement) {
     </main>
 
     <footer class="foot">
-      <span>API: <code>/api/search</code>, <code>/api/torbox/add</code></span>
+      <span>API: <code>/api/search</code>, <code>/api/torbox/add</code>, <code>/api/torbox/download</code></span>
     </footer>
   `
 
@@ -170,8 +177,11 @@ export function mountApp(root: HTMLDivElement) {
         const leech = Number.isFinite(r.leechers) ? `<span class="pill">L ${r.leechers}</span>` : ''
         const size = r.size ? `<span class="pill">${esc(fmtBytes(r.size))}</span>` : ''
         const cached = r.cached ? badge('Cached', 'good') : badge('Not cached', 'bad')
-        const addDisabled = !r.magnet
-        const addLabel = addDisabled ? 'No magnet' : 'Add to TorBox'
+        const hasMagnet = !!r.magnet
+        const canDownload = !!r.cached && hasMagnet
+        const actionLabel = r.cached ? (canDownload ? 'Download' : 'No magnet') : hasMagnet ? 'Add to TorBox' : 'No magnet'
+        const action = r.cached ? 'download' : 'add'
+        const actionDisabled = r.cached ? !canDownload : !hasMagnet
 
         return `
           <article class="card">
@@ -188,7 +198,7 @@ export function mountApp(root: HTMLDivElement) {
 
             <div class="card__actions">
               <button class="btn btn--ghost" type="button" data-action="copy" ${r.magnet ? '' : 'disabled'}>Copy magnet</button>
-              <button class="btn" type="button" data-action="add" ${addDisabled ? 'disabled' : ''}>${esc(addLabel)}</button>
+              <button class="btn" type="button" data-action="${action}" ${actionDisabled ? 'disabled' : ''}>${esc(actionLabel)}</button>
             </div>
           </article>
         `
@@ -224,6 +234,15 @@ export function mountApp(root: HTMLDivElement) {
     return await apiPost<AddResponse>('/api/torbox/add', {
       magnet,
       addOnlyIfCached: true,
+    })
+  }
+
+  async function downloadFromTorbox(magnet: string, infoHash?: string) {
+    return await apiPost<DownloadResponse>('/api/torbox/download', {
+      magnet,
+      infoHash,
+      addOnlyIfCached: true,
+      zipLink: true,
     })
   }
 
@@ -268,6 +287,25 @@ export function mountApp(root: HTMLDivElement) {
         status.textContent = `TorBox add failed: ${msg}`
       } finally {
         btn.textContent = 'Add to TorBox'
+        btn.disabled = false
+      }
+    }
+
+    if (action === 'download') {
+      if (!item.magnet) return
+      btn.disabled = true
+      btn.textContent = 'Preparing...'
+      try {
+        const r = await downloadFromTorbox(item.magnet, item.infoHash)
+        if (!r.url) throw new Error('No download URL returned')
+        status.textContent = r.detail || 'Opening download...'
+        const w = window.open(r.url, '_blank', 'noopener,noreferrer')
+        if (!w) window.location.href = r.url
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        status.textContent = `TorBox download failed: ${msg}`
+      } finally {
+        btn.textContent = 'Download'
         btn.disabled = false
       }
     }
