@@ -5,7 +5,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5174',
+        // Use explicit IPv4 to avoid localhost resolving to multiple addresses.
+        target: 'http://127.0.0.1:5174',
         changeOrigin: true,
       },
     },
