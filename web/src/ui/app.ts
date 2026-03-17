@@ -15,6 +15,7 @@ type SearchResponse = {
   query: string
   elapsedMs: number
   results: SearchResult[]
+  cachedResults?: SearchResult[]
   errors: Array<{ indexer: string; message: string }>
 }
 
@@ -145,7 +146,8 @@ export function mountApp(root: HTMLDivElement) {
 
   function viewResults() {
     if (!last) return []
-    return onlyCachedInput.checked ? last.results.filter((r) => r.cached) : last.results
+    if (!onlyCachedInput.checked) return last.results
+    return last.cachedResults || last.results.filter((r) => r.cached)
   }
 
   function render() {

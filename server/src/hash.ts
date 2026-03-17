@@ -31,11 +31,28 @@ function bytesToHex(bytes: Uint8Array) {
     .join('')
 }
 
-export function magnetToInfoHashHex(magnet: string): string | undefined {
-  const m = magnet.match(/(?:\?|&)xt=urn:btih:([^&]+)/i)
-  if (!m) return undefined
-  const raw = decodeURIComponent(m[1]).trim()
+export function btihToInfoHashHex(btih: string): string | undefined {
+  if (typeof btih !== 'string') return undefined
+
+  // Accept:
+  // - 40-char hex
+  // - 32-char base32
+  // - strings that include a urn:btih: prefix
+  let raw = btih.trim()
+  if (!raw) return undefined
+
+  // Some sources give the whole URN.
+  const m = raw.match(/^urn:btih:(.+)$/i)
+  if (m) raw = m[1].trim()
+
+  try {
+    raw = decodeURIComponent(raw).trim()
+  } catch {
+    // Ignore bad percent-encoding.
+  }
+
   if (isHex40(raw)) return raw.toLowerCase()
+
   if (/^[A-Z2-7]{32}$/i.test(raw)) {
     try {
       const bytes = base32ToBytes(raw)
@@ -45,5 +62,12 @@ export function magnetToInfoHashHex(magnet: string): string | undefined {
       return undefined
     }
   }
+
   return undefined
+}
+
+export function magnetToInfoHashHex(magnet: string): string | undefined {
+  const m = magnet.match(/(?:\?|&)xt=urn:btih:([^&]+)/i)
+  if (!m) return undefined
+  return btihToInfoHashHex(m[1])
 }

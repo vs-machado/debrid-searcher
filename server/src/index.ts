@@ -20,6 +20,69 @@ app.disable('x-powered-by')
 app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 
+function safeJsonForLog(v: unknown, maxChars = 12000) {
+  try {
+    const s = JSON.stringify(v)
+    if (s.length <= maxChars) return s
+    return s.slice(0, maxChars) + `... (truncated, ${s.length} chars)`
+  } catch (e) {
+    return `[unserializable json: ${e instanceof Error ? e.message : String(e)}]`
+  }
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v)
+}
+
+function asArray(v: unknown): unknown[] {
+  return Array.isArray(v) ? v : []
+}
+
+// Basic API logging so it's easy to see what the server returns.
+if (env.logHttp) {
+  app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+    const started = Date.now()
+
+    const origJson = res.json.bind(res)
+    ;(res as any).json = (body: unknown) => {
+      ;(res as any).__jsonBody = body
+      return origJson(body as any)
+    }
+
+    res.on('finish', () => {
+      const ms = Date.now() - started
+      const body = (res as any).__jsonBody as unknown
+
+      let extra = ''
+      if (isRecord(body)) {
+        const results = asArray(body.results)
+        if (results.length) {
+          const cachedCount = results.filter((r) => isRecord(r) && r.cached === true).length
+          const errCount = asArray(body.errors).length
+          extra = ` results=${results.length} cached=${cachedCount} errors=${errCount}`
+        }
+      }
+
+      console.log(`${req.method} ${req.originalUrl} -> ${res.statusCode} (${ms}ms)${extra}`)
+
+      if (isRecord(body)) {
+        const errors = asArray(body.errors)
+        if (errors.length) {
+          for (const e of errors.slice(0, 10)) {
+            if (isRecord(e)) console.log(`error[${String(e.indexer ?? 'unknown')}]: ${String(e.message ?? e.detail ?? '')}`)
+            else console.log(`error: ${String(e)}`)
+          }
+          if (errors.length > 10) console.log(`... ${errors.length - 10} more error(s)`)
+        }
+      }
+
+      if (env.logHttpBody && body !== undefined) console.log(safeJsonForLog(body))
+    })
+
+    next()
+  })
+}
+
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ ok: true })
 })
@@ -63,16 +126,22 @@ app.get('/api/search', async (req: Request, res: Response) => {
   }
 
   // Cache check in one batch.
+  let cachedResults: ApiResult[] = []
   if (env.torboxApiKey) {
-    const hashes = results.map((r) => r.infoHash).filter(Boolean) as string[]
+    const hashes = results
+      .map((r) => r.infoHash)
+      .filter((h): h is string => typeof h === 'string' && !!h.trim())
+      .map((h) => h.trim().toLowerCase())
     const unique = Array.from(new Set(hashes))
 
     try {
       const client = torboxClient({ baseUrl: env.torboxBaseUrl, apiKey: env.torboxApiKey })
       const map = await client.checkCached(unique)
       for (const r of results) {
-        if (r.infoHash) r.cached = !!map[r.infoHash]
+        if (r.infoHash) r.cached = !!map[r.infoHash.trim().toLowerCase()]
       }
+
+      cachedResults = results.filter((r) => r.cached)
     } catch (e) {
       errors.push({ indexer: 'torbox', message: e instanceof Error ? e.message : String(e) })
     }
@@ -90,7 +159,7 @@ app.get('/api/search', async (req: Request, res: Response) => {
     return a.title.localeCompare(b.title)
   })
 
-  res.json({ query: q, elapsedMs: Date.now() - started, results, errors })
+  res.json({ query: q, elapsedMs: Date.now() - started, results, cachedResults, errors })
 })
 
 app.post('/api/torbox/add', async (req: Request, res: Response) => {

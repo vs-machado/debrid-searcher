@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
-import { magnetToInfoHashHex } from './hash.js'
+import { btihToInfoHashHex, magnetToInfoHashHex } from './hash.js'
 
 export type TorznabResult = {
   title: string
@@ -75,10 +75,8 @@ export async function searchTorznab(indexerUrl: string, query: string, timeoutMs
       .map((item) => {
         const attrs = item?.['torznab:attr'] || item?.attr
         const magnet = pickMagnet(item)
-        const infoHash =
-          attrValue(attrs, 'infohash') ||
-          attrValue(attrs, 'infoHash') ||
-          (magnet ? magnetToInfoHashHex(magnet) : undefined)
+        const rawInfoHash = attrValue(attrs, 'infohash') || attrValue(attrs, 'infoHash')
+        const infoHash = btihToInfoHashHex(rawInfoHash || '') || (magnet ? magnetToInfoHashHex(magnet) : undefined)
 
         const seeders = toInt(attrValue(attrs, 'seeders'))
         const leechers = toInt(attrValue(attrs, 'peers')) ?? toInt(attrValue(attrs, 'leechers'))
