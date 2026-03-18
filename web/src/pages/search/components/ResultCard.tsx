@@ -4,14 +4,12 @@ import { fmtBytes, shortHash } from '../lib/format'
 export default function ResultCard({
   r,
   strictCached,
-  onCopyMagnet,
   onAdd,
   onDownload,
   onInspect,
 }: {
   r: SearchResult
   strictCached: boolean
-  onCopyMagnet: () => void
   onAdd: () => void
   onDownload: () => void
   onInspect: () => void
@@ -64,46 +62,26 @@ export default function ResultCard({
 
         {/* Actions module */}
         <div className="shrink-0 flex flex-row gap-3 w-full md:w-auto">
-          <div className="join flex-1 md:flex-none">
-            <button 
-              className="btn btn-sm join-item font-mono uppercase text-[10px] opacity-40 hover:opacity-100 hover:bg-base-100 border-base-content/10 transition-all px-4 h-9 min-h-0"
-              onClick={onCopyMagnet} 
-              disabled={!hasMagnet}
-              type="button"
-            >
-              Copy
-            </button>
-            <button 
-              className="btn btn-sm join-item font-mono uppercase text-[10px] opacity-40 hover:opacity-100 hover:bg-base-100 border-base-content/10 transition-all px-4 h-9 min-h-0"
-              onClick={onInspect}
-              type="button"
-            >
-              Info
-            </button>
-          </div>
-
-          <div className="flex flex-1 md:flex-none gap-3">
-            <button 
-              className="btn btn-sm btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center gap-2 group/btn"
-              onClick={onAdd}
-              disabled={addDisabled}
-              type="button"
-              title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TORRENT'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Add
-            </button>
-            <button 
-              className="btn btn-sm btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary flex-1 font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center gap-2 group/btn"
-              onClick={onDownload}
-              disabled={dlDisabled}
-              type="button"
-              title={!canAttempt ? 'UNSAFE_OPERATION' : 'EXEC_DOWNLOAD'}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              Dl
-            </button>
-          </div>
+          <button 
+            className="btn btn-sm btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 md:flex-none font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center justify-center gap-2 group/btn"
+            onClick={onAdd}
+            disabled={addDisabled}
+            type="button"
+            title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TORRENT'}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add
+          </button>
+          <button 
+            className="btn btn-sm btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary flex-1 md:flex-none font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center justify-center gap-2 group/btn"
+            onClick={onDownload}
+            disabled={dlDisabled}
+            type="button"
+            title={!canAttempt ? 'UNSAFE_OPERATION' : 'EXEC_DOWNLOAD'}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Dl
+          </button>
         </div>
       </div>
       

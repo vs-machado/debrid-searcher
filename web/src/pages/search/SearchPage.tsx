@@ -341,7 +341,6 @@ export default function SearchPage() {
                         r={r}
                         strictCached={strictCached}
                         onInspect={() => openDetails(r)}
-                        onCopyMagnet={() => void copyMagnet(r.magnet)}
                         onAdd={() => void addToTorbox(r.magnet)}
                         onDownload={() => void downloadFromTorbox(r.magnet, r.infoHash)}
                       />
