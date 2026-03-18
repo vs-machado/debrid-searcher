@@ -1,5 +1,5 @@
 import type { SearchResult } from '../types'
-import { fmtBytes, shortHash } from '../lib/format'
+import { fmtBytes } from '../lib/format'
 
 export default function ResultCard({
   r,
@@ -41,21 +41,26 @@ export default function ResultCard({
               {r.title}
             </h3>
             
-            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase">
-              {Number.isFinite(r.seeders) && <span className="opacity-40">SEEDS: {r.seeders}</span>}
-              {r.size && <span className="opacity-40">{fmtBytes(r.size)}</span>}
-              {r.infoHash && <span className="hidden lg:block opacity-40">{shortHash(r.infoHash)}</span>}
-              <span
-                className={`badge badge-sm h-5 px-2 font-mono text-[9px] tracking-widest uppercase border ${
-                  isCached
-                    ? 'bg-success/10 text-success border-success/30'
-                    : r.cached === false
-                      ? 'bg-error/10 text-error border-error/30'
-                      : 'bg-warning/10 text-warning border-warning/30 animate-pulse'
-                }`}
-              >
-                {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
-              </span>
+            <div className="mt-2 flex flex-wrap items-center gap-x-8 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase">
+              <div className="w-28 shrink-0 opacity-40">
+                {Number.isFinite(r.seeders) && <span>SEEDS: {r.seeders}</span>}
+              </div>
+              <div className="w-36 shrink-0 opacity-40">
+                {r.size && <span>SIZE: {fmtBytes(r.size)}</span>}
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`badge badge-sm h-5 px-2 font-mono text-[9px] tracking-widest uppercase border ${
+                    isCached
+                      ? 'bg-success/10 text-success border-success/30'
+                      : r.cached === false
+                        ? 'bg-error/10 text-error border-error/30'
+                        : 'bg-warning/10 text-warning border-warning/30 animate-pulse'
+                  }`}
+                >
+                  {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
+                </span>
+              </div>
             </div>
           </button>
         </div>
@@ -67,7 +72,7 @@ export default function ResultCard({
             onClick={onAdd}
             disabled={addDisabled}
             type="button"
-            title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TORRENT'}
+            title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TO_TORBOX'}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Add

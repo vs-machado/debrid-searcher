@@ -29,7 +29,7 @@ export default function SearchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(20)
   const [orderBy, setOrderBy] = useState<'relevance' | 'size' | 'seeds'>('relevance')
 
   const { toasts, push, dismiss } = useToasts()
