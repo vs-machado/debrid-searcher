@@ -29,7 +29,7 @@ export default function LoginPage() {
             <div className="brand-mark h-12 w-12" aria-hidden="true" />
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tighter leading-none uppercase">
-            DEBRID <span className="text-primary/80">LAB</span>
+            DEBRID <span className="text-primary/80">SEARCHER</span>
           </h1>
           <p className="text-[11px] font-mono tracking-widest opacity-40 mt-4 uppercase">
             Access Protocol // Central Management Terminal

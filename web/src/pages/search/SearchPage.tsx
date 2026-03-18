@@ -137,7 +137,7 @@ export default function SearchPage() {
           <div className="brand-mark shrink-0 w-8 h-8" aria-hidden="true" />
           <div className="min-w-0">
             <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tighter leading-none uppercase">
-              DEBRID <span className="text-primary/80">LAB</span>
+              DEBRID <span className="text-primary/80">SEARCHER</span>
             </h1>
           </div>
         </div>

@@ -1,4 +1,4 @@
-# Debrid Downloader (TorBox)
+# Debrid Searcher (TorBox)
 
 Vite + TypeScript web UI that searches torrents via Torznab indexers (Prowlarr/Jackett), then checks which results are cached on TorBox.
 
