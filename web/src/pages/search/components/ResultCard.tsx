@@ -47,8 +47,7 @@ export default function ResultCard({
             </h3>
             
             <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase opacity-40">
-              <span className="text-primary font-bold">{r.indexer}</span>
-              {Number.isFinite(r.seeders) && <span>S:{r.seeders}</span>}
+              {Number.isFinite(r.seeders) && <span>SEEDS: {r.seeders}</span>}
               {r.size && <span>{fmtBytes(r.size)}</span>}
               {r.infoHash && <span className="hidden lg:block">{shortHash(r.infoHash)}</span>}
             </div>
