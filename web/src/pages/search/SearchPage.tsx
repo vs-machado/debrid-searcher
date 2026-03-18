@@ -31,6 +31,11 @@ export default function SearchPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [orderBy, setOrderBy] = useState<'relevance' | 'size' | 'seeds'>('relevance')
+  const resultsContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    resultsContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [page])
 
   const { toasts, push, dismiss } = useToasts()
   const { copyText } = useClipboard()
@@ -333,7 +338,7 @@ export default function SearchPage() {
           {data && !loading && (
             results.length ? (
               <div className="flex-1 min-h-0 flex flex-col gap-4">
-                <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
+                <div ref={resultsContainerRef} className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
                   <div className="grid grid-cols-1 gap-2">
                     {paginatedResults.map((r, idx) => (
                       <ResultCard
