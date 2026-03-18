@@ -11,6 +11,9 @@ function makeEnv(partial?: Partial<AppEnv>): AppEnv {
     indexerUrls: [],
     logHttp: false,
     logHttpBody: false,
+    authUsername: 'admin',
+    authPassword: 'pw',
+    authCookieSecret: 'test-secret-please-change',
     ...partial,
   }
 }
@@ -25,7 +28,9 @@ describe('api', () => {
 
   it('GET /api/search validates query', async () => {
     const app = createApp(makeEnv())
-    const res = await request(app).get('/api/search?q=a')
+    const agent = request.agent(app)
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'pw' }).expect(200)
+    const res = await agent.get('/api/search?q=a')
     expect(res.status).toBe(400)
     expect(res.body?.ok).toBe(false)
     expect(res.body?.detail).toBe('Invalid request')
@@ -34,7 +39,9 @@ describe('api', () => {
 
   it('GET /api/search returns config error when no indexers', async () => {
     const app = createApp(makeEnv({ indexerUrls: [] }))
-    const res = await request(app).get('/api/search?q=matrix')
+    const agent = request.agent(app)
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'pw' }).expect(200)
+    const res = await agent.get('/api/search?q=matrix')
     expect(res.status).toBe(200)
     expect(res.body?.query).toBe('matrix')
     expect(Array.isArray(res.body?.results)).toBe(true)
@@ -45,7 +52,9 @@ describe('api', () => {
 
   it('POST /api/torbox/add errors when API key missing', async () => {
     const app = createApp(makeEnv({ torboxApiKey: undefined }))
-    const res = await request(app).post('/api/torbox/add').send({ magnet: 'magnet:?xt=urn:btih:abc' })
+    const agent = request.agent(app)
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'pw' }).expect(200)
+    const res = await agent.post('/api/torbox/add').send({ magnet: 'magnet:?xt=urn:btih:abc' })
     expect(res.status).toBe(400)
     expect(res.body?.ok).toBe(false)
     expect(res.body?.detail).toBe('TORBOX_API_KEY is not set')
@@ -53,7 +62,9 @@ describe('api', () => {
 
   it('POST /api/torbox/download errors when API key missing', async () => {
     const app = createApp(makeEnv({ torboxApiKey: undefined }))
-    const res = await request(app)
+    const agent = request.agent(app)
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'pw' }).expect(200)
+    const res = await agent
       .post('/api/torbox/download')
       .send({ magnet: 'magnet:?xt=urn:btih:abc', zipLink: true })
     expect(res.status).toBe(400)

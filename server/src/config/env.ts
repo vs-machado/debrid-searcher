@@ -5,6 +5,9 @@ export type AppEnv = {
   indexerUrls: string[]
   logHttp: boolean
   logHttpBody: boolean
+  authUsername?: string
+  authPassword?: string
+  authCookieSecret?: string
 }
 
 function parseBool(raw: string | undefined, defaultValue: boolean) {
@@ -44,5 +47,9 @@ export function readEnv(): AppEnv {
   const logHttp = parseBool(process.env.LOG_HTTP, true)
   const logHttpBody = parseBool(process.env.LOG_HTTP_BODY, false)
 
-  return { port, torboxBaseUrl, torboxApiKey, indexerUrls, logHttp, logHttpBody }
+  const authUsername = process.env.AUTH_USERNAME?.trim() || undefined
+  const authPassword = process.env.AUTH_PASSWORD?.trim() || undefined
+  const authCookieSecret = process.env.AUTH_COOKIE_SECRET?.trim() || undefined
+
+  return { port, torboxBaseUrl, torboxApiKey, indexerUrls, logHttp, logHttpBody, authUsername, authPassword, authCookieSecret }
 }
