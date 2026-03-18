@@ -97,7 +97,7 @@ export default function LoginForm() {
           ) : (
             <span className="flex items-center gap-2">
               Execute_Auth_Sequence
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity">_</span>
+              <span className="animate-blink">_</span>
             </span>
           )}
         </button>
