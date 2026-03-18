@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
-import { btihToInfoHashHex, magnetToInfoHashHex } from './hash.js'
+import { btihToInfoHashHex, magnetToInfoHashHex } from '../utils/hash.js'
 
 export type TorznabResult = {
   title: string

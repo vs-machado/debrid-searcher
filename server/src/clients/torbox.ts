@@ -187,7 +187,7 @@ export function torboxClient(opts: TorboxClientOpts) {
       for (const batch of batches) {
         try {
           Object.assign(merged, await doReq(batch, false))
-        } catch (e) {
+        } catch {
           // Some setups appear to ignore JSON bodies for this endpoint. Retry with query params,
           // but in small batches to avoid 414 Request-URI Too Large.
           const smallBatches = batch.length > 25 ? chunk(batch, 25) : [batch]

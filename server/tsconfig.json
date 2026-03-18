@@ -11,5 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "express", "cors"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts"]
 }
