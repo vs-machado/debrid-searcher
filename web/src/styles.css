@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: false;
+}
+
+@plugin "daisyui/theme" {
+  name: "torboxlab";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  /* Machined Obsidian Palette */
+  --color-base-100: oklch(18% 0.02 240);
+  --color-base-200: oklch(15% 0.02 240);
+  --color-base-300: oklch(12% 0.02 240);
+  --color-base-content: oklch(90% 0.01 240);
+
+  --color-primary: oklch(75% 0.15 180); /* Electric Teal */
+  --color-primary-content: oklch(20% 0.05 180);
+  
+  --color-secondary: oklch(65% 0.2 45);  /* Safety Orange */
+  --color-secondary-content: oklch(15% 0.05 45);
+  
+  --color-accent: oklch(85% 0.1 90);    /* Acid Lime */
+  --color-accent-content: oklch(20% 0.05 90);
+
+  --color-neutral: oklch(25% 0.03 240);
+  --color-neutral-content: oklch(85% 0.01 240);
+
+  --color-info: oklch(70% 0.1 220);
+  --color-success: oklch(75% 0.15 150);
+  --color-warning: oklch(80% 0.15 70);
+  --color-error: oklch(65% 0.2 25);
+
+  --radius-box: 0.4rem;    /* Industrial sharpness */
+  --radius-field: 0.2rem;
+  --radius-selector: 0.2rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+:root {
+  --atmo-glow: oklch(75% 0.15 180 / 0.08);
+}
+
+html {
+  font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  background: var(--color-base-300);
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: "Bricolage Grotesque", ui-serif, Georgia, serif;
+  letter-spacing: -0.03em;
+}
+
+.font-body {
+  font-family: "Public Sans", sans-serif;
+}
+
+.font-mono {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.85em;
+}
+
+.atmo {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(circle at 50% -20%, var(--atmo-glow), transparent 70%),
+    oklch(12% 0.02 240);
+  z-index: -1;
+}
+
+/* Grainy overlay for that physical, textured feel */
+.atmo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  box-shadow: 0 0 20px var(--atmo-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: translateX(-100%);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  to { transform: translateX(100%); }
+}
+
+.machined-card {
+  background: oklch(20% 0.02 240 / 0.8);
+  border: 1px solid oklch(30% 0.02 240);
+  box-shadow: 
+    0 10px 30px -10px rgba(0,0,0,0.5),
+    inset 0 1px 0 oklch(35% 0.02 240 / 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.empty-state {
+  padding: 4rem 2rem;
+  border: 1px solid oklch(25% 0.02 240);
+  background: oklch(15% 0.02 240 / 0.4);
+  text-align: center;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, oklch(30% 0.02 240), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise {
+  animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Staggered load */
+.animate-rise:nth-child(1) { animation-delay: 0.05s; }
+.animate-rise:nth-child(2) { animation-delay: 0.1s; }
+.animate-rise:nth-child(3) { animation-delay: 0.15s; }
+.animate-rise:nth-child(4) { animation-delay: 0.2s; }
+.animate-rise:nth-child(5) { animation-delay: 0.25s; }
