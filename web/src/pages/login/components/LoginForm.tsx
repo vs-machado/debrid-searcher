@@ -41,7 +41,7 @@ export default function LoginForm() {
           {submitting && <span className="text-primary animate-pulse">Syncing...</span>}
         </label>
         <input
-          className="input input-bordered w-full bg-base-300/40 border-base-content/10 font-mono text-lg focus:border-primary/50 focus:ring-1 focus:ring-primary/20 placeholder:opacity-20 h-16 rounded-sm"
+          className="input w-full bg-base-300/40 border border-primary/40 font-mono text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-16 rounded-sm transition-all"
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
@@ -58,7 +58,7 @@ export default function LoginForm() {
           {lockedMsLeft > 0 && <span className="text-error">LOCKOUT: {fmtCountdown(lockedMsLeft)}</span>}
         </label>
         <input
-          className="input input-bordered w-full bg-base-300/40 border-base-content/10 font-mono text-lg focus:border-primary/50 focus:ring-1 focus:ring-primary/20 placeholder:opacity-20 h-16 rounded-sm"
+          className="input w-full bg-base-300/40 border border-primary/40 font-mono text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-16 rounded-sm transition-all"
           type="password"
           autoComplete="current-password"
           placeholder="••••••••"

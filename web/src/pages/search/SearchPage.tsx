@@ -143,7 +143,7 @@ export default function SearchPage() {
               <div className="md:col-span-8 flex flex-col gap-3">
                 <span className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-50">Main_Search_Input</span>
                 <input
-                  className="input input-bordered w-full bg-base-300/40 border-base-content/10 font-mono text-lg focus:border-primary/50 focus:ring-1 focus:ring-primary/20 placeholder:opacity-20 h-16 rounded-sm"
+                  className="input w-full bg-base-300/40 border border-primary/40 font-mono text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-16 rounded-sm transition-all"
                   type="search"
                   placeholder="E.G. DUNE_2024_REMUX"
                   value={q}
