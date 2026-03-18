@@ -30,9 +30,6 @@ export default function ResultCard({
         {/* Status indicator module */}
         <div className="shrink-0 flex items-center gap-3">
           <div className={`w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-warning opacity-30 animate-pulse'} transition-all`} />
-          <div className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-30 select-none hidden md:block">
-            {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
-          </div>
         </div>
 
         {/* Content module */}
@@ -46,10 +43,21 @@ export default function ResultCard({
               {r.title}
             </h3>
             
-            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase opacity-40">
-              {Number.isFinite(r.seeders) && <span>SEEDS: {r.seeders}</span>}
-              {r.size && <span>{fmtBytes(r.size)}</span>}
-              {r.infoHash && <span className="hidden lg:block">{shortHash(r.infoHash)}</span>}
+            <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase">
+              {Number.isFinite(r.seeders) && <span className="opacity-40">SEEDS: {r.seeders}</span>}
+              {r.size && <span className="opacity-40">{fmtBytes(r.size)}</span>}
+              {r.infoHash && <span className="hidden lg:block opacity-40">{shortHash(r.infoHash)}</span>}
+              <span
+                className={`badge badge-sm h-5 px-2 font-mono text-[9px] tracking-widest uppercase border ${
+                  isCached
+                    ? 'bg-success/10 text-success border-success/30'
+                    : r.cached === false
+                      ? 'bg-error/10 text-error border-error/30'
+                      : 'bg-warning/10 text-warning border-warning/30 animate-pulse'
+                }`}
+              >
+                {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
+              </span>
             </div>
           </button>
         </div>
