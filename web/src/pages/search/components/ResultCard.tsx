@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { SearchResult } from '../types'
 import { fmtBytes } from '../lib/format'
 
@@ -14,12 +15,23 @@ export default function ResultCard({
   onDownload: () => void
   onInspect: () => void
 }) {
+  const [isAdding, setIsAdding] = useState(false)
   const hasMagnet = !!r.magnet
   const isCached = r.cached === true
   const canAttempt = hasMagnet && (!strictCached || r.cached !== false)
 
-  const addDisabled = !hasMagnet || (strictCached && r.cached === false)
+  const addDisabled = !hasMagnet || isAdding
   const dlDisabled = !hasMagnet || (strictCached && r.cached === false)
+
+  const handleAdd = async () => {
+    if (addDisabled) return
+    setIsAdding(true)
+    try {
+      await onAdd()
+    } finally {
+      setIsAdding(false)
+    }
+  }
 
   return (
     <div className="machined-card group relative p-0.5 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors">
@@ -27,7 +39,7 @@ export default function ResultCard({
         
         {/* Status indicator module */}
         <div className="shrink-0 flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-warning opacity-30 animate-pulse'} transition-all`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-base-content/20 opacity-40'} transition-all`} />
         </div>
 
         {/* Content module */}
@@ -55,10 +67,10 @@ export default function ResultCard({
                       ? 'bg-success/10 text-success border-success/30'
                       : r.cached === false
                         ? 'bg-error/10 text-error border-error/30'
-                        : 'bg-warning/10 text-warning border-warning/30 animate-pulse'
+                        : 'bg-base-content/5 text-base-content/40 border-base-content/10'
                   }`}
                 >
-                  {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
+                  {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'UNKNOWN'}
                 </span>
               </div>
             </div>
@@ -69,12 +81,16 @@ export default function ResultCard({
         <div className="shrink-0 flex flex-row gap-3 w-full md:w-auto">
           <button 
             className="btn btn-sm btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 md:flex-none font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center justify-center gap-2 group/btn"
-            onClick={onAdd}
+            onClick={handleAdd}
             disabled={addDisabled}
             type="button"
-            title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TO_TORBOX'}
+            title="ADD_TO_TORBOX"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            {isAdding ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            )}
             Add
           </button>
           <button 

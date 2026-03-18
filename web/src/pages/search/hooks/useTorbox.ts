@@ -11,10 +11,10 @@ export function useTorbox(params: {
     async (magnet: string) => {
       return await apiPost<AddResponse>('/api/torbox/add', {
         magnet,
-        addOnlyIfCached: params.strictCached,
+        addOnlyIfCached: false,
       })
     },
-    [params.strictCached],
+    [],
   )
 
   const download = useCallback(
