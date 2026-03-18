@@ -19,8 +19,8 @@
   --color-primary: oklch(75% 0.15 180); /* Electric Teal */
   --color-primary-content: oklch(20% 0.05 180);
   
-  --color-secondary: oklch(65% 0.2 45);  /* Safety Orange */
-  --color-secondary-content: oklch(15% 0.05 45);
+  --color-secondary: oklch(81% 0.01 211);  /* Muted Silver */
+  --color-secondary-content: oklch(20% 0.05 211);
   
   --color-accent: oklch(85% 0.1 90);    /* Acid Lime */
   --color-accent-content: oklch(20% 0.05 90);

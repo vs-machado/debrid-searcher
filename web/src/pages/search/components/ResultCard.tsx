@@ -28,7 +28,7 @@ export default function ResultCard({
       <div className="bg-base-200/50 p-6 flex flex-col md:flex-row gap-8 items-start md:items-center">
         
         {/* Status indicator module */}
-        <div className="shrink-0 flex flex-col items-center gap-3">
+        <div className="shrink-0 flex flex-col items-center gap-3 mt-8">
           <div className={`w-3 h-3 rounded-full ${isCached ? 'bg-success shadow-[0_0_12px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-warning opacity-30 animate-pulse'} transition-all`} />
           <div className="text-[9px] font-mono uppercase tracking-[0.2em] vertical-rl h-16 opacity-30 select-none">
             {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
@@ -76,23 +76,25 @@ export default function ResultCard({
             </button>
           </div>
 
-          <div className="join flex flex-1 md:flex-none">
+          <div className="flex flex-1 md:flex-none gap-2">
             <button 
-              className="btn btn-sm btn-secondary join-item flex-1 font-mono uppercase text-[10px] border-none px-6"
+              className="btn btn-sm btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 font-mono uppercase text-[10px] px-4 min-h-0 h-9 transition-all flex items-center gap-2 group/btn"
               onClick={onAdd}
               disabled={addDisabled}
               type="button"
               title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TORRENT'}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Add
             </button>
             <button 
-              className="btn btn-sm btn-primary join-item flex-1 font-mono uppercase text-[10px] border-none px-6"
+              className="btn btn-sm btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary flex-1 font-mono uppercase text-[10px] px-4 min-h-0 h-9 transition-all flex items-center gap-2 group/btn"
               onClick={onDownload}
               disabled={dlDisabled}
               type="button"
               title={!canAttempt ? 'UNSAFE_OPERATION' : 'EXEC_DOWNLOAD'}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               Dl
             </button>
           </div>

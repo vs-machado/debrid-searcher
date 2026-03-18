@@ -322,21 +322,23 @@ export default function SearchPage() {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-4 justify-end">
-              <button className="btn btn-ghost px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest border border-base-content/5" onClick={() => void copyMagnet(selected?.magnet)}>
+              <button className="btn btn-ghost px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest border border-base-content/5 hover:border-base-content/20 transition-all h-12" onClick={() => void copyMagnet(selected?.magnet)}>
                 Copy_Magnet
               </button>
               <button 
-                className="btn btn-secondary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest"
+                className="btn btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
                 onClick={() => void addToTorbox(selected?.magnet)}
                 disabled={!selected?.magnet || (strictCached && selected?.cached === false)}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add_To_Torbox
               </button>
               <button 
-                className="btn btn-primary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest"
+                className="btn btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
                 onClick={() => void downloadFromTorbox(selected?.magnet, selected?.infoHash)}
                 disabled={!selected?.magnet || (strictCached && selected?.cached === false)}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Execute_Download
               </button>
             </div>
