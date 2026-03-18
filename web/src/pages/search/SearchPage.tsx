@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import type { SearchResult } from './types'
 import ToastHost from './components/ToastHost'
@@ -28,6 +28,9 @@ export default function SearchPage() {
   const [selected, setSelected] = useState<SearchResult | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   const { toasts, push, dismiss } = useToasts()
   const { copyText } = useClipboard()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
@@ -43,6 +46,15 @@ export default function SearchPage() {
     if (view === 'all') return data.results
     return data.cachedResults?.length ? data.cachedResults : data.results.filter((r) => r.cached)
   }, [data, view])
+
+  const totalPages = Math.ceil(results.length / pageSize)
+  const paginatedResults = useMemo(() => {
+    return results.slice((page - 1) * pageSize, page * pageSize)
+  }, [results, page, pageSize])
+
+  useEffect(() => {
+    setPage(1)
+  }, [results.length, pageSize])
 
   async function doSearch() {
     const res = await runSearch()
@@ -93,41 +105,34 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-dvh relative text-base-content/90 font-body">
+    <div className="h-dvh flex flex-col overflow-hidden relative text-base-content/90 font-body">
       <div className="atmo" aria-hidden="true" />
       <ToastHost toasts={toasts} onClose={dismiss} />
 
       {/* Navigation Header */}
-      <nav className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row gap-6 md:items-end justify-between border-b border-base-content/5 mb-8">
-        <div className="flex gap-5 items-center">
-          <div className="brand-mark shrink-0" aria-hidden="true" />
+      <nav className="shrink-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col md:flex-row gap-4 md:items-end justify-between border-b border-base-content/5">
+        <div className="flex gap-4 items-center">
+          <div className="brand-mark shrink-0 w-8 h-8" aria-hidden="true" />
           <div className="min-w-0">
-            <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tighter leading-none uppercase">
+            <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tighter leading-none uppercase">
               DEBRID <span className="text-primary/80">LAB</span>
             </h1>
-            <p className="text-[11px] font-mono tracking-widest opacity-40 mt-3 uppercase">
-              Torznab Indexer Engine // TorBox Cache Intelligence
-            </p>
           </div>
         </div>
 
-        <div className="flex flex-col md:items-end gap-3 text-right">
-          <div className="flex items-center gap-4 text-[11px] font-mono uppercase tracking-widest opacity-60">
+        <div className="flex flex-col md:items-end gap-2 text-right">
+          <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest opacity-60">
             <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
             System_Operational
-            <a className="hover:text-primary transition-colors" href="/api/health" target="_blank" rel="noreferrer">
-              [API_HEALTH]
-            </a>
           </div>
-          <div className="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em]">
-            <span className="opacity-50">Identity:</span>
+          <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em]">
             <span className="text-primary font-bold">{session?.username || 'ANON'}</span>
             <button 
               onClick={async () => {
                 await logout()
                 navigate('/login')
               }}
-              className="ml-2 px-2 py-0.5 border border-primary/30 hover:bg-primary/20 hover:border-primary/50 transition-all text-primary/80 hover:text-primary"
+              className="px-1.5 py-0.5 border border-primary/30 hover:bg-primary/20 transition-all text-primary/80"
             >
               [DISCONNECT]
             </button>
@@ -135,15 +140,15 @@ export default function SearchPage() {
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-6 pb-24">
+      <main className="flex-1 min-h-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col gap-6 overflow-hidden">
         {/* Control Center */}
-        <section className="machined-card p-1 rounded-sm">
-          <div className="bg-base-200/40 p-6 md:p-8 flex flex-col gap-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-              <div className="md:col-span-8 flex flex-col gap-3">
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-50">Main_Search_Input</span>
+        <section className="machined-card p-0.5 rounded-sm shrink-0">
+          <div className="bg-base-200/40 p-5 md:p-6 flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              <div className="md:col-span-8 flex flex-col gap-2">
+                <span className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-50">Main_Search_Input</span>
                 <input
-                  className="input w-full bg-base-300/40 border border-primary/40 font-mono text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-16 rounded-sm transition-all"
+                  className="input w-full bg-base-300/40 border border-primary/40 font-mono text-base focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-12 rounded-sm transition-all"
                   type="search"
                   placeholder="E.G. DUNE_2024_REMUX"
                   value={q}
@@ -155,86 +160,96 @@ export default function SearchPage() {
                 />
               </div>
 
-              <div className="md:col-span-4 flex gap-4">
-                <label className="btn btn-outline border-base-content/10 flex-1 hover:bg-base-100 hover:text-primary rounded-sm h-16">
+              <div className="md:col-span-4 flex gap-3">
+                <label className="btn btn-outline border-base-content/10 flex-1 hover:bg-base-100 hover:text-primary rounded-sm h-12 min-h-0">
                   <input
                     type="checkbox"
-                    className="toggle toggle-primary toggle-sm mr-2"
+                    className="toggle toggle-primary toggle-xs mr-2"
                     checked={view === 'cached'}
                     onChange={(e) => setView(e.target.checked ? 'cached' : 'all')}
                   />
-                  <span className="text-[11px] font-mono uppercase tracking-widest">Only_Cached</span>
+                  <span className="text-[10px] font-mono uppercase tracking-widest">Cached</span>
                 </label>
 
                 <button 
-                  className="btn btn-primary h-16 px-10 rounded-sm font-mono uppercase tracking-widest group" 
+                  className="btn btn-primary h-12 min-h-0 px-8 rounded-sm font-mono uppercase tracking-widest group" 
                   onClick={() => void doSearch()} 
                   disabled={loading}
                 >
                   {loading ? (
-                    <span className="loading loading-spinner loading-sm" />
+                    <span className="loading loading-spinner loading-xs" />
                   ) : (
-                    <span className="flex items-center gap-2">
-                      Run
-                      <span className="animate-blink">_</span>
+                    <span className="flex items-center gap-2 text-xs">
+                      Run_
                     </span>
                   )}
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-t border-base-content/5">
-              <div className="text-[11px] font-mono opacity-50 flex items-center gap-6">
+            <div className="flex items-center justify-between gap-4 py-1.5 border-t border-base-content/5">
+              <div className="text-[10px] font-mono opacity-50 flex items-center gap-4">
                 {data ? (
                   <>
                     <div>CACHE: <span className="text-success">{cachedCount}</span></div>
                     <div>TOTAL: {data.results.length}</div>
-                    <div>TIME: {data.elapsedMs}MS</div>
                   </>
                 ) : (
-                  <div>READY: WAITING FOR_COMMAND</div>
+                  <div>READY: WAITING_FOR_COMMAND</div>
                 )}
               </div>
 
-              <div className="flex gap-4">
-                <button 
-                  className={`text-[10px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                >
-                  {showAdvanced ? '[-] CLOSE_CONFIG' : '[+] OPEN_CONFIG'}
-                </button>
-              </div>
+              <button 
+                className={`text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                {showAdvanced ? '[-] CONFIG' : '[+] CONFIG'}
+              </button>
             </div>
 
             {showAdvanced && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-base-content/5 animate-rise">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-base-content/5 animate-rise">
                 <ConfigCard 
-                  title="STRICT_CACHE_PROTECTION"
-                  desc="Prevents any operation on uncached torrents."
+                  title="STRICT_CACHE"
+                  desc="Uncached lock."
                   checked={strictCached}
                   onChange={(v) => setStrictCached(v)}
                 />
                 <ConfigCard 
-                  title="ZIP_PACKAGE_LINKS"
-                  desc="Requests results as ZIP archives."
+                  title="ZIP_PACKAGE"
+                  desc="ZIP archive."
                   checked={zipLink}
                   onChange={(v) => setZipLink(v)}
                 />
-                <div className="p-5 bg-base-300/30 border border-base-content/5 rounded-sm">
-                  <div className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 mb-3">GLOBAL_VIEW_MODE</div>
+                <div className="p-3 bg-base-300/30 border border-base-content/5 rounded-sm">
+                  <div className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-40 mb-2">VIEW_MODE</div>
                   <div className="join flex">
                     <button 
-                      className={`btn btn-sm join-item flex-1 font-mono uppercase text-[10px] ${view === 'cached' ? 'btn-neutral' : 'btn-ghost'}`}
+                      className={`btn btn-xs join-item flex-1 font-mono uppercase text-[9px] ${view === 'cached' ? 'btn-neutral' : 'btn-ghost'}`}
                       onClick={() => setView('cached')}
                     >
                       Cached
                     </button>
                     <button 
-                      className={`btn btn-sm join-item flex-1 font-mono uppercase text-[10px] ${view === 'all' ? 'btn-neutral' : 'btn-ghost'}`}
+                      className={`btn btn-xs join-item flex-1 font-mono uppercase text-[9px] ${view === 'all' ? 'btn-neutral' : 'btn-ghost'}`}
                       onClick={() => setView('all')}
                     >
                       All
                     </button>
+                  </div>
+                </div>
+                <div className="p-3 bg-base-300/30 border border-base-content/5 rounded-sm">
+                  <div className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-40 mb-2">LIMIT</div>
+                  <div className="join flex">
+                    {[10, 20, 50, 100].map(sz => (
+                      <button 
+                        key={sz}
+                        className={`btn btn-xs join-item flex-1 font-mono uppercase text-[8px] ${pageSize === sz ? 'btn-neutral' : 'btn-ghost'}`}
+                        onClick={() => setPageSize(sz)}
+                      >
+                        {sz}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -243,41 +258,68 @@ export default function SearchPage() {
         </section>
 
         {/* Results Stream */}
-        <section className="mt-16">
+        <section className="flex-1 min-h-0 flex flex-col gap-4">
           {!data && !loading && (
-            <div className="empty-state border-dashed opacity-50">
-              <h2 className="font-display text-2xl font-bold uppercase tracking-tight">ENGINE_IDLE</h2>
-              <p className="mt-2 text-sm opacity-60">System is ready for torznab search queries.</p>
+            <div className="empty-state border-dashed opacity-50 flex-1 flex flex-col justify-center">
+              <h2 className="font-display text-xl font-bold uppercase tracking-tight">ENGINE_IDLE</h2>
+              <p className="mt-1 text-xs opacity-60">System ready.</p>
             </div>
           )}
 
           {loading && (
-            <div className="grid grid-cols-1 gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="machined-card h-40 shimmer opacity-20" />
+            <div className="flex-1 grid grid-cols-1 gap-3 overflow-hidden">
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="machined-card h-16 shimmer opacity-10 rounded-sm" />
               ))}
             </div>
           )}
 
           {data && !loading && (
             results.length ? (
-              <div className="grid grid-cols-1 gap-4">
-                {results.map((r, idx) => (
-                  <ResultCard
-                    key={`${r.infoHash || r.magnet || r.title}-${idx}`}
-                    r={r}
-                    strictCached={strictCached}
-                    onInspect={() => openDetails(r)}
-                    onCopyMagnet={() => void copyMagnet(r.magnet)}
-                    onAdd={() => void addToTorbox(r.magnet)}
-                    onDownload={() => void downloadFromTorbox(r.magnet, r.infoHash)}
-                  />
-                ))}
+              <div className="flex-1 min-h-0 flex flex-col gap-4">
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-1 gap-2">
+                    {paginatedResults.map((r, idx) => (
+                      <ResultCard
+                        key={`${r.infoHash || r.magnet || r.title}-${idx}`}
+                        r={r}
+                        strictCached={strictCached}
+                        onInspect={() => openDetails(r)}
+                        onCopyMagnet={() => void copyMagnet(r.magnet)}
+                        onAdd={() => void addToTorbox(r.magnet)}
+                        onDownload={() => void downloadFromTorbox(r.magnet, r.infoHash)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                {totalPages > 1 && (
+                  <div className="shrink-0 py-2 flex items-center justify-center gap-4">
+                    <div className="join">
+                      <button 
+                        className="btn btn-xs join-item border-base-content/10 font-mono text-[9px] uppercase tracking-widest disabled:opacity-20 h-8"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                      >
+                        Prev
+                      </button>
+                      <div className="btn btn-xs join-item border-base-content/10 font-mono text-[9px] uppercase tracking-widest no-animation cursor-default h-8">
+                        P{page}/{totalPages}
+                      </div>
+                      <button 
+                        className="btn btn-xs join-item border-base-content/10 font-mono text-[9px] uppercase tracking-widest disabled:opacity-20 h-8"
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="empty-state">
-                <h2 className="font-display text-2xl font-bold uppercase tracking-tight text-error/80">NO_RESULTS_MATCHED</h2>
-                <p className="mt-2 text-sm opacity-60">Adjust filters or search parameters.</p>
+              <div className="empty-state flex-1 flex flex-col justify-center">
+                <h2 className="font-display text-xl font-bold uppercase tracking-tight text-error/80">NO_MATCH</h2>
               </div>
             )
           )}
@@ -354,14 +396,14 @@ export default function SearchPage() {
 
 function ConfigCard({ title, desc, checked, onChange }: { title: string, desc: string, checked: boolean, onChange: (v: boolean) => void }) {
   return (
-    <label className="p-5 bg-base-300/30 border border-base-content/5 rounded-sm flex items-start justify-between gap-6 cursor-pointer hover:bg-base-300/50 transition-colors">
+    <label className="p-3 bg-base-300/30 border border-base-content/5 rounded-sm flex items-start justify-between gap-4 cursor-pointer hover:bg-base-300/50 transition-colors">
       <div className="min-w-0">
-        <div className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 mb-1">{title}</div>
-        <div className="text-[11px] opacity-70 leading-relaxed font-body">{desc}</div>
+        <div className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-40 mb-0.5">{title}</div>
+        <div className="text-[10px] opacity-70 leading-tight font-body">{desc}</div>
       </div>
       <input 
         type="checkbox" 
-        className="toggle toggle-primary toggle-sm mt-1" 
+        className="toggle toggle-primary toggle-xs mt-0.5" 
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />

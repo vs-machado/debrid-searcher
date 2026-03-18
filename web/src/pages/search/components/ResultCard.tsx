@@ -24,13 +24,13 @@ export default function ResultCard({
   const dlDisabled = !hasMagnet || (strictCached && r.cached === false)
 
   return (
-    <div className="machined-card group relative p-1 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors">
-      <div className="bg-base-200/50 p-6 flex flex-col md:flex-row gap-8 items-start md:items-center">
+    <div className="machined-card group relative p-0.5 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors">
+      <div className="bg-base-200/50 p-3 flex flex-col md:flex-row gap-4 items-start md:items-center">
         
         {/* Status indicator module */}
-        <div className="shrink-0 flex flex-col items-center gap-3 mt-8">
-          <div className={`w-3 h-3 rounded-full ${isCached ? 'bg-success shadow-[0_0_12px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-warning opacity-30 animate-pulse'} transition-all`} />
-          <div className="text-[9px] font-mono uppercase tracking-[0.2em] vertical-rl h-16 opacity-30 select-none">
+        <div className="shrink-0 flex items-center gap-3">
+          <div className={`w-2 h-2 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-warning opacity-30 animate-pulse'} transition-all`} />
+          <div className="text-[8px] font-mono uppercase tracking-[0.2em] opacity-30 select-none hidden md:block">
             {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'SCANNING'}
           </div>
         </div>
@@ -42,25 +42,24 @@ export default function ResultCard({
             onClick={onInspect}
             type="button"
           >
-            <h3 className="font-display text-lg md:text-xl font-bold uppercase tracking-tight leading-tight line-clamp-2">
+            <h3 className="font-display text-sm md:text-base font-bold uppercase tracking-tight leading-tight line-clamp-1">
               {r.title}
             </h3>
             
-            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[10px] tracking-widest uppercase opacity-40">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[9px] tracking-widest uppercase opacity-40">
               <span className="text-primary font-bold">{r.indexer}</span>
-              {Number.isFinite(r.seeders) && <span>S: {r.seeders}</span>}
-              {Number.isFinite(r.leechers) && <span>L: {r.leechers}</span>}
+              {Number.isFinite(r.seeders) && <span>S:{r.seeders}</span>}
               {r.size && <span>{fmtBytes(r.size)}</span>}
-              {r.infoHash && <span className="hidden sm:block">{shortHash(r.infoHash)}</span>}
+              {r.infoHash && <span className="hidden lg:block">{shortHash(r.infoHash)}</span>}
             </div>
           </button>
         </div>
 
         {/* Actions module */}
-        <div className="shrink-0 flex flex-col md:flex-row gap-3 w-full md:w-auto">
-          <div className="join flex flex-1 md:flex-none">
+        <div className="shrink-0 flex flex-row gap-2 w-full md:w-auto">
+          <div className="join flex-1 md:flex-none">
             <button 
-              className="btn btn-sm join-item flex-1 font-mono uppercase text-[10px] opacity-40 hover:opacity-100 hover:bg-base-100 border-base-content/10 transition-all"
+              className="btn btn-xs join-item font-mono uppercase text-[9px] opacity-40 hover:opacity-100 hover:bg-base-100 border-base-content/10 transition-all px-3 h-7 min-h-0"
               onClick={onCopyMagnet} 
               disabled={!hasMagnet}
               type="button"
@@ -68,7 +67,7 @@ export default function ResultCard({
               Copy
             </button>
             <button 
-              className="btn btn-sm join-item flex-1 font-mono uppercase text-[10px] opacity-40 hover:opacity-100 hover:bg-base-100 border-base-content/10 transition-all"
+              className="btn btn-xs join-item font-mono uppercase text-[9px] opacity-40 hover:opacity-100 hover:bg-base-100 border-base-content/10 transition-all px-3 h-7 min-h-0"
               onClick={onInspect}
               type="button"
             >
@@ -78,23 +77,23 @@ export default function ResultCard({
 
           <div className="flex flex-1 md:flex-none gap-2">
             <button 
-              className="btn btn-sm btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 font-mono uppercase text-[10px] px-4 min-h-0 h-9 transition-all flex items-center gap-2 group/btn"
+              className="btn btn-xs btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 font-mono uppercase text-[9px] px-3 h-7 min-h-0 transition-all flex items-center gap-1.5 group/btn"
               onClick={onAdd}
               disabled={addDisabled}
               type="button"
               title={!canAttempt ? 'UNSAFE_OPERATION' : 'ADD_TORRENT'}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Add
             </button>
             <button 
-              className="btn btn-sm btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary flex-1 font-mono uppercase text-[10px] px-4 min-h-0 h-9 transition-all flex items-center gap-2 group/btn"
+              className="btn btn-xs btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary flex-1 font-mono uppercase text-[9px] px-3 h-7 min-h-0 transition-all flex items-center gap-1.5 group/btn"
               onClick={onDownload}
               disabled={dlDisabled}
               type="button"
               title={!canAttempt ? 'UNSAFE_OPERATION' : 'EXEC_DOWNLOAD'}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               Dl
             </button>
           </div>
