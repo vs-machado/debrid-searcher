@@ -180,8 +180,9 @@ export default function SearchPage() {
                     <span className="loading loading-spinner loading-xs" />
                   ) : (
                     <span className="flex items-center gap-2 text-xs">
-                      Run_
-                    </span>
+                      Run
+                      <span className="animate-blink">_</span>
+                    </span>                    
                   )}
                 </button>
               </div>
