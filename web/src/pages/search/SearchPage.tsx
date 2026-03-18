@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
 import type { SearchResult } from './types'
 import ToastHost from './components/ToastHost'
 import ResultCard from './components/ResultCard'
@@ -7,11 +8,19 @@ import { useToasts } from './hooks/useToasts'
 import { useClipboard } from './hooks/useClipboard'
 import { useSearch } from './hooks/useSearch'
 import { useTorbox } from './hooks/useTorbox'
+import { useAuthSession } from '../login/hooks/useAuth'
 
 type ViewMode = 'cached' | 'all'
 
 export default function SearchPage() {
+  const navigate = useNavigate()
+  const { logout, session, loading: authLoading } = useAuthSession()
   const [view, setView] = useState<ViewMode>('cached')
+
+  if (!authLoading && !session) {
+    return <Navigate to="/login" />
+  }
+
   const [strictCached, setStrictCached] = useState(true)
   const [zipLink, setZipLink] = useState(true)
 
@@ -102,12 +111,27 @@ export default function SearchPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-[11px] font-mono uppercase tracking-widest opacity-60">
-          <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
-          System Operational
-          <a className="hover:text-primary transition-colors" href="/api/health" target="_blank" rel="noreferrer">
-            [API_HEALTH]
-          </a>
+        <div className="flex flex-col md:items-end gap-3 text-right">
+          <div className="flex items-center gap-4 text-[11px] font-mono uppercase tracking-widest opacity-60">
+            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
+            System_Operational
+            <a className="hover:text-primary transition-colors" href="/api/health" target="_blank" rel="noreferrer">
+              [API_HEALTH]
+            </a>
+          </div>
+          <div className="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em]">
+            <span className="opacity-50">Identity:</span>
+            <span className="text-primary font-bold">{session?.username || 'ANON'}</span>
+            <button 
+              onClick={async () => {
+                await logout()
+                navigate('/login')
+              }}
+              className="ml-2 px-2 py-0.5 border border-primary/30 hover:bg-primary/20 hover:border-primary/50 transition-all text-primary/80 hover:text-primary"
+            >
+              [DISCONNECT]
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -152,7 +176,7 @@ export default function SearchPage() {
                   ) : (
                     <span className="flex items-center gap-2">
                       Run
-                      <span className="opacity-0 group-hover:opacity-100 transition-opacity">_</span>
+                      <span className="animate-blink">_</span>
                     </span>
                   )}
                 </button>
