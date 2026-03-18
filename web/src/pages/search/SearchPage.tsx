@@ -30,6 +30,7 @@ export default function SearchPage() {
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [orderBy, setOrderBy] = useState<'relevance' | 'size' | 'seeds'>('relevance')
 
   const { toasts, push, dismiss } = useToasts()
   const { copyText } = useClipboard()
@@ -47,14 +48,35 @@ export default function SearchPage() {
     return data.cachedResults?.length ? data.cachedResults : data.results.filter((r) => r.cached)
   }, [data, view])
 
-  const totalPages = Math.ceil(results.length / pageSize)
+  const orderedResults = useMemo(() => {
+    if (orderBy === 'relevance') return results
+
+    const decorated = results.map((r, idx) => ({ r, idx }))
+    decorated.sort((a, b) => {
+      if (orderBy === 'size') {
+        const av = Number.isFinite(a.r.size) ? (a.r.size as number) : -1
+        const bv = Number.isFinite(b.r.size) ? (b.r.size as number) : -1
+        const cmp = bv - av
+        return cmp !== 0 ? cmp : a.idx - b.idx
+      }
+
+      const av = Number.isFinite(a.r.seeders) ? (a.r.seeders as number) : -1
+      const bv = Number.isFinite(b.r.seeders) ? (b.r.seeders as number) : -1
+      const cmp = bv - av
+      return cmp !== 0 ? cmp : a.idx - b.idx
+    })
+
+    return decorated.map((d) => d.r)
+  }, [results, orderBy])
+
+  const totalPages = Math.ceil(orderedResults.length / pageSize)
   const paginatedResults = useMemo(() => {
-    return results.slice((page - 1) * pageSize, page * pageSize)
-  }, [results, page, pageSize])
+    return orderedResults.slice((page - 1) * pageSize, page * pageSize)
+  }, [orderedResults, page, pageSize])
 
   useEffect(() => {
     setPage(1)
-  }, [results.length, pageSize])
+  }, [orderedResults.length, pageSize, orderBy])
 
   async function doSearch() {
     const res = await runSearch()
@@ -200,12 +222,43 @@ export default function SearchPage() {
                 )}
               </div>
 
-              <button 
-                className={`text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                {showAdvanced ? '[-] CONFIG' : '[+] CONFIG'}
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-[9px] font-mono uppercase tracking-widest opacity-40">ORDER_BY</span>
+                <div className="join">
+                  <button
+                    className={`btn btn-xs join-item border-base-content/10 font-mono uppercase tracking-widest text-[8px] h-7 min-h-0 px-2 ${orderBy === 'relevance' ? 'btn-neutral' : 'btn-ghost'}`}
+                    onClick={() => setOrderBy('relevance')}
+                    type="button"
+                    title="ORDER_BY_RELEVANCE"
+                  >
+                    Rel
+                  </button>
+                  <button
+                    className={`btn btn-xs join-item border-base-content/10 font-mono uppercase tracking-widest text-[8px] h-7 min-h-0 px-2 ${orderBy === 'size' ? 'btn-neutral' : 'btn-ghost'}`}
+                    onClick={() => setOrderBy('size')}
+                    type="button"
+                    title="ORDER_BY_SIZE"
+                  >
+                    Size
+                  </button>
+                  <button
+                    className={`btn btn-xs join-item border-base-content/10 font-mono uppercase tracking-widest text-[8px] h-7 min-h-0 px-2 ${orderBy === 'seeds' ? 'btn-neutral' : 'btn-ghost'}`}
+                    onClick={() => setOrderBy('seeds')}
+                    type="button"
+                    title="ORDER_BY_SEEDS"
+                  >
+                    Seeds
+                  </button>
+                </div>
+
+                <button 
+                  className={`text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  type="button"
+                >
+                  {showAdvanced ? '[-] CONFIG' : '[+] CONFIG'}
+                </button>
+              </div>
             </div>
 
             {showAdvanced && (
@@ -228,12 +281,14 @@ export default function SearchPage() {
                     <button 
                       className={`btn btn-xs join-item flex-1 font-mono uppercase text-[9px] ${view === 'cached' ? 'btn-neutral' : 'btn-ghost'}`}
                       onClick={() => setView('cached')}
+                      type="button"
                     >
                       Cached
                     </button>
                     <button 
                       className={`btn btn-xs join-item flex-1 font-mono uppercase text-[9px] ${view === 'all' ? 'btn-neutral' : 'btn-ghost'}`}
                       onClick={() => setView('all')}
+                      type="button"
                     >
                       All
                     </button>
