@@ -386,7 +386,7 @@ export default function SearchPage() {
         <div className="modal-box rounded-sm bg-base-200 border border-base-content/10 max-w-4xl p-0 overflow-hidden shadow-3xl">
           <div className="bg-base-300 px-8 py-6 border-b border-base-content/5 flex items-start justify-between">
             <div className="min-w-0 pr-12">
-              <h3 className="font-display text-2xl font-black uppercase tracking-tighter leading-tight break-words">
+              <h3 className="font-display text-2xl font-black uppercase tracking-tighter leading-tight wrap-break-word">
                 {selected?.title}
               </h3>
               <div className="mt-4 flex flex-wrap gap-4 font-mono text-[10px] tracking-widest uppercase opacity-60">
