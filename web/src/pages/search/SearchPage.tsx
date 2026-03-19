@@ -339,9 +339,25 @@ export default function SearchPage() {
           )}
 
           {loading && (
-            <div className="flex-1 grid grid-cols-1 gap-3 overflow-hidden">
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="machined-card h-16 shimmer opacity-10 rounded-sm" />
+            <div className="flex-1 grid grid-cols-1 gap-2 overflow-hidden px-0.5">
+              {[...Array(pageSize)].map((_, i) => (
+                <div key={i} className="machined-card rounded-sm opacity-20 p-0.5 pointer-events-none">
+                  <div className="bg-base-200/50 p-4 flex flex-col md:flex-row gap-5 items-start md:items-center">
+                    <div className="shrink-0 w-2.5 h-2.5 rounded-full bg-base-content/40 shimmer" />
+                    <div className="flex-1 w-full">
+                      <div className="h-6 bg-base-content/20 rounded-sm w-2/3 shimmer" />
+                      <div className="mt-2 flex gap-x-8">
+                        <div className="h-4 bg-base-content/20 rounded-sm w-20 shimmer" />
+                        <div className="h-4 bg-base-content/20 rounded-sm w-28 shimmer" />
+                        <div className="h-4 bg-base-content/20 rounded-sm w-24 shimmer" />
+                      </div>
+                    </div>
+                    <div className="shrink-0 flex flex-row gap-3 w-full md:w-auto">
+                      <div className="h-9 flex-1 md:w-20 bg-base-content/10 rounded-sm shimmer" />
+                      <div className="h-9 flex-1 md:w-20 bg-base-content/10 rounded-sm shimmer" />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
