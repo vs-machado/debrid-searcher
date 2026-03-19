@@ -16,12 +16,13 @@ export default function ResultCard({
   onInspect: () => void
 }) {
   const [isAdding, setIsAdding] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const hasMagnet = !!r.magnet
   const isCached = r.cached === true
   const canAttempt = hasMagnet && (!strictCached || r.cached !== false)
 
-  const addDisabled = !hasMagnet || isAdding
-  const dlDisabled = !hasMagnet || (strictCached && r.cached === false)
+  const addDisabled = !hasMagnet || isAdding || isDownloading
+  const dlDisabled = !hasMagnet || (strictCached && r.cached === false) || isAdding || isDownloading
 
   const handleAdd = async () => {
     if (addDisabled) return
@@ -30,6 +31,16 @@ export default function ResultCard({
       await onAdd()
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleDownload = async () => {
+    if (dlDisabled) return
+    setIsDownloading(true)
+    try {
+      await onDownload()
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -95,12 +106,16 @@ export default function ResultCard({
           </button>
           <button 
             className="btn btn-sm btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary flex-1 md:flex-none font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center justify-center gap-2 group/btn"
-            onClick={onDownload}
+            onClick={handleDownload}
             disabled={dlDisabled}
             type="button"
             title={!canAttempt ? 'UNSAFE_OPERATION' : 'EXEC_DOWNLOAD'}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            {isDownloading ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            )}
             Dl
           </button>
         </div>

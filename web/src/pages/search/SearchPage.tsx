@@ -27,7 +27,8 @@ export default function SearchPage() {
   const { q, setQ, loading, data, cachedCount, run: runSearch } = useSearch()
   const [selected, setSelected] = useState<SearchResult | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [isPerformingModalAction, setIsPerformingModalAction] = useState(false)
+  const [isModalAdding, setIsModalAdding] = useState(false)
+  const [isModalDownloading, setIsModalDownloading] = useState(false)
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -106,20 +107,21 @@ export default function SearchPage() {
 
   async function addToTorbox(magnet?: string) {
     if (!magnet) return
-    setIsPerformingModalAction(true)
+    setIsModalAdding(true)
     try {
       const res = await torboxAdd(magnet)
       push('success', res.detail || 'Added to TorBox')
+      dialogRef.current?.close()
     } catch (e) {
       push('error', 'TorBox add failed', e instanceof Error ? e.message : String(e))
     } finally {
-      setIsPerformingModalAction(false)
+      setIsModalAdding(false)
     }
   }
 
   async function downloadFromTorbox(magnet?: string, infoHash?: string) {
     if (!magnet) return
-    setIsPerformingModalAction(true)
+    setIsModalDownloading(true)
     try {
       const res = await torboxDownload({ magnet, infoHash })
       if (!res.url) {
@@ -127,10 +129,11 @@ export default function SearchPage() {
         return
       }
       push('success', 'Download link ready', `Torrent ${res.torrentId ?? ''}`.trim())
+      dialogRef.current?.close()
     } catch (e) {
       push('error', 'TorBox download failed', e instanceof Error ? e.message : String(e))
     } finally {
-      setIsPerformingModalAction(false)
+      setIsModalDownloading(false)
     }
   }
 
@@ -438,9 +441,9 @@ export default function SearchPage() {
               <button 
                 className="btn btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
                 onClick={() => void addToTorbox(selected?.magnet)}
-                disabled={!selected?.magnet || isPerformingModalAction}
+                disabled={!selected?.magnet || isModalAdding || isModalDownloading}
               >
-                {isPerformingModalAction ? (
+                {isModalAdding ? (
                   <span className="loading loading-spinner loading-xs" />
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -450,9 +453,9 @@ export default function SearchPage() {
               <button 
                 className="btn btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
                 onClick={() => void downloadFromTorbox(selected?.magnet, selected?.infoHash)}
-                disabled={!selected?.magnet || (strictCached && selected?.cached === false) || isPerformingModalAction}
+                disabled={!selected?.magnet || (strictCached && selected?.cached === false) || isModalAdding || isModalDownloading}
               >
-                {isPerformingModalAction ? (
+                {isModalDownloading ? (
                   <span className="loading loading-spinner loading-xs" />
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
