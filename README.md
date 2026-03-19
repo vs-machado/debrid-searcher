@@ -1,6 +1,18 @@
 # Debrid Searcher (TorBox)
 
-Vite + TypeScript web UI that searches torrents via Torznab indexers (Prowlarr/Jackett), then checks which results are cached on TorBox.
+A refined, industrial-style web interface for searching torrents via Torznab indexers and instantly verifying their cache status on TorBox.
+
+## Key Features
+
+- **Blazing Fast Search:** Connects to multiple Prowlarr/Jackett indexers simultaneously.
+- **Cache Verification:** Instantly identifies which torrents are already cached on TorBox for immediate downloading.
+- **Machined UI:** A high-contrast, professional-grade interface with staggered animations and smooth interactions.
+- **Advanced Controls:**
+  - **Sorting:** Order results by relevance, size, or seeders.
+  - **Strict Cache Lock:** Toggle to restrict downloads to cached files only.
+  - **Zip Packaging:** Option to request files as a ZIP archive.
+  - **Adjustable Pagination:** Choose between 10, 20, 50, or 100 results per page.
+- **Polished Experience:** Responsive design, detailed inspection modals, and accurate loading skeletons.
 
 ## Setup
 
@@ -14,34 +26,36 @@ npm run install:all
 
 Copy `server/.env.example` to `server/.env` and fill:
 
-- `TORBOX_API_KEY`
-- `INDEXERS_TORZNAB_URLS`
+- `TORBOX_API_KEY` (Your TorBox API key)
+- `INDEXERS_TORZNAB_URLS` (One or more Torznab API endpoints)
 
-`INDEXERS_TORZNAB_URLS` should be one or more Torznab API URLs (including the apikey in the URL). Example:
+Example `INDEXERS_TORZNAB_URLS`:
 
 ```env
-INDEXERS_TORZNAB_URLS=["http://localhost:9117/api/v2.0/indexers/all/results/torznab/api?apikey=YOUR_JACKETT_OR_PROWLARR_KEY"]
+INDEXERS_TORZNAB_URLS=["http://localhost:9117/api/v2.0/indexers/all/results/torznab/api?apikey=YOUR_KEY"]
 ```
 
-## Run (dev)
+## Run (Development)
 
 ```bash
 npm run dev
 ```
 
-- Web: http://localhost:5173
-- Server: http://localhost:5174
+- **Web:** http://localhost:5173
+- **Server:** http://localhost:5174
 
-## Build + Run (prod)
+## Build & Deploy (Production)
 
 ```bash
 npm run build
 npm start
 ```
 
-The server serves the built UI from `web/dist`.
+The server automatically serves the built UI from `web/dist`.
 
-## API
+## API Documentation
 
-- `GET /api/search?q=...`
-- `POST /api/torbox/add` `{ magnet: string, addOnlyIfCached?: boolean }`
+- `GET /api/search?q=...`: Search across indexers and check cache status.
+- `POST /api/torbox/add`: Add a magnet to TorBox account.
+- `POST /api/torbox/download`: Request a direct download link from TorBox.
+- `GET /api/auth/session`: Check current login session.
