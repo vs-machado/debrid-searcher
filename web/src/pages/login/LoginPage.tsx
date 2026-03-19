@@ -16,13 +16,6 @@ export default function LoginPage() {
     <div className="min-h-dvh relative flex flex-col items-center justify-center text-base-content/90 font-body overflow-hidden">
       <div className="atmo" aria-hidden="true" />
       
-      {/* Decorative Brand Background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] select-none">
-        <h1 className="font-display text-[20vw] font-black uppercase tracking-tighter leading-none">
-          DEBRID
-        </h1>
-      </div>
-
       <main className="relative z-10 w-full max-w-lg px-6">
         <div className="mb-12 text-center">
           <div className="flex justify-center mb-6">
