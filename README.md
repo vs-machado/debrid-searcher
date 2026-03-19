@@ -4,15 +4,13 @@ A refined, industrial-style web interface for searching torrents via Torznab ind
 
 ## Key Features
 
-- **Blazing Fast Search:** Connects to multiple Prowlarr/Jackett indexers simultaneously.
-- **Cache Verification:** Instantly identifies which torrents are already cached on TorBox for immediate downloading.
-- **Machined UI:** A high-contrast, professional-grade interface with staggered animations and smooth interactions.
+- **Authentication:** Login system with persistent sessions to protect your server instance.
+- **Search:** Simultaneous searching across multiple Prowlarr/Jackett indexers.
+- **Cache Verification:** Real-time checking of torrent status against TorBox cloud for immediate streaming.
 - **Advanced Controls:**
-  - **Sorting:** Order results by relevance, size, or seeders.
-  - **Strict Cache Lock:** Toggle to restrict downloads to cached files only.
-  - **Zip Packaging:** Option to request files as a ZIP archive.
-  - **Adjustable Pagination:** Choose between 10, 20, 50, or 100 results per page.
-- **Polished Experience:** Responsive design, detailed inspection modals, and accurate loading skeletons.
+  - **Sorting:** Multi-parameter ordering by Relevance, Size, or Seeds.
+  - **Zip Packaging:** Toggle for requesting files as a single ZIP archive.
+  - **Custom Pagination:** Adjustable results per page (10, 20, 50, or 100).
 
 ## Setup
 
@@ -41,8 +39,15 @@ INDEXERS_TORZNAB_URLS=["http://localhost:9117/api/v2.0/indexers/all/results/torz
 npm run dev
 ```
 
-- **Web:** http://localhost:5173
+- **Web:** http://localhost:5175
 - **Server:** http://localhost:5174
+
+## Setup Jackett/Prowlarr
+
+Ensure your indexer manager (e.g., Jackett) is accessible at `http://localhost:9117`. 
+1. Open `http://localhost:9117` in your browser.
+2. Add your desired indexers to Jackett.
+3. Use the provided Torznab URLs in the server `.env` configuration.
 
 ## Build & Deploy (Production)
 
