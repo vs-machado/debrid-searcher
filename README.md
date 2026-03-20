@@ -31,6 +31,15 @@ The torrent indexers you configure and any torrents you search for or download a
   - **Zip Packaging:** Toggle for requesting files as a single ZIP archive.
   - **Custom Pagination:** Adjustable results per page (10, 20, 50, or 100).
 
+## Tech Stack
+
+- **Web:** React + TypeScript, Vite, React Router, Tailwind CSS, daisyUI
+- **Server:** Node.js + TypeScript, Express, Zod, dotenv, fast-xml-parser
+- **Testing:** Vitest, Supertest
+- **Tooling:** npm workspaces, concurrently, tsx
+- **Deploy:** Docker / Docker Compose (optional bundled Jackett service)
+- **Integrations:** TorBox API, Torznab indexers (Jackett/Prowlarr)
+
 ## Setup
 
 1) Install dependencies
