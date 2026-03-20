@@ -148,22 +148,28 @@ export default function SearchPage() {
       <ToastHost toasts={toasts} onClose={dismiss} />
 
       {/* Navigation Header */}
-      <nav className="shrink-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col md:flex-row gap-4 md:items-end justify-between border-b border-base-content/5">
-        <div className="flex gap-4 items-center">
-          <div className="brand-mark shrink-0 w-8 h-8" aria-hidden="true" />
+      <nav className="shrink-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col md:flex-row gap-4 md:items-center justify-between border-b border-base-content/5">
+        <div className="flex gap-3 items-center">
+          <img
+            src="/website_logo.png"
+            className="brand-logo shrink-0 w-10 h-10 md:w-11 md:h-11 translate-y-[1px]"
+            alt=""
+            decoding="async"
+            loading="eager"
+          />
           <div className="min-w-0">
-            <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tighter leading-none uppercase">
+            <h1 className="font-display text-3xl md:text-3xl font-extrabold tracking-tighter leading-none uppercase">
               DEBRID <span className="text-primary/80">SEARCHER</span>
             </h1>
           </div>
         </div>
 
         <div className="flex flex-col md:items-end gap-2 text-right">
-          <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest opacity-60">
+          <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest opacity-60 leading-none">
             <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
             System_Operational
           </div>
-          <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em] leading-none">
             <span className="text-primary font-bold">{session?.username || 'ANON'}</span>
             <button 
               onClick={async () => {

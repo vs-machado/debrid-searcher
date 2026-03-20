@@ -19,7 +19,13 @@ export default function LoginPage() {
       <main className="relative z-10 w-full max-w-lg px-6">
         <div className="mb-12 text-center">
           <div className="flex justify-center mb-6">
-            <div className="brand-mark h-12 w-12" aria-hidden="true" />
+            <img
+              src="/website_logo.png"
+              className="brand-logo h-36 w-36"
+              alt=""
+              decoding="async"
+              loading="eager"
+            />
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tighter leading-none uppercase">
             DEBRID <span className="text-primary/80">SEARCHER</span>
