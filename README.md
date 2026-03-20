@@ -2,13 +2,17 @@
   <img src="web/public/website_logo.png" alt="Debrid Searcher logo" width="140" />
 </p>
 
-# Debrid Searcher (TorBox)
-
-A web interface for searching torrents via Torznab indexers and instantly verifying their cache status on TorBox.
+<h1 align="center">Debrid Searcher</h1>
 
 <p align="center">
-  <img src="login.jpg" alt="Login screen" width="48%" />
-  <img src="searcher.jpg" alt="Search screen" width="48%" />
+  A web interface for searching torrents via Torznab indexers and instantly verifying their cache status on TorBox.
+</p>
+
+<p align="center">
+  <img width="100%" alt="Login screen" src="https://github.com/user-attachments/assets/36e7e3b7-0530-490b-9eca-fe5c3f09a02d" />
+
+  <img width="100%" alt="Search screen" src="https://github.com/user-attachments/assets/b7de28a3-eae7-4db1-9527-ea99adba68d5" />
+
 </p>
 
 ## Disclaimer
