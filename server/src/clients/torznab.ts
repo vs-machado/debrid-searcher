@@ -54,7 +54,7 @@ function pickDownloadUrl(item: any): string | undefined {
   return undefined
 }
 
-export async function searchTorznab(indexerUrl: string, query: string, timeoutMs = 15000): Promise<TorznabResult[]> {
+export async function searchTorznab(indexerUrl: string, query: string, timeoutMs = 60000): Promise<TorznabResult[]> {
   const u = new URL(indexerUrl)
   u.searchParams.set('t', u.searchParams.get('t') || 'search')
   u.searchParams.set('q', query)
