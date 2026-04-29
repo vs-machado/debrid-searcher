@@ -36,8 +36,7 @@ The torrent indexers you configure and any torrents you search for or download a
 - **Web:** React + TypeScript, Vite, React Router, Tailwind CSS, daisyUI
 - **Server:** Node.js + TypeScript, Express, Zod, dotenv, fast-xml-parser
 - **Testing:** Vitest, Supertest
-- **Tooling:** npm workspaces, concurrently, tsx
-- **Deploy:** Docker / Docker Compose (optional bundled Jackett service)
+- **Deploy:** Docker / Docker Compose
 - **Integrations:** TorBox API, Torznab indexers (Jackett/Prowlarr)
 
 ## Setup

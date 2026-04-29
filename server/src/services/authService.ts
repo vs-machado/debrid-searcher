@@ -53,7 +53,7 @@ export function createAuthService(env: AppEnv) {
   }
 
   function cookieSecure() {
-    return process.env.NODE_ENV === 'production'
+    return env.authCookieSecure ?? process.env.NODE_ENV === 'production'
   }
 
   function makeSessionCookieValue(username: string) {

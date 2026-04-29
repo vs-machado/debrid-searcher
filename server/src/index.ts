@@ -24,6 +24,6 @@ if (fs.existsSync(webIndex)) {
   })
 }
 
-app.listen(env.port, () => {
-  console.log(`server listening on http://localhost:${env.port}`)
+app.listen(env.port, '0.0.0.0', () => {
+  console.log(`server listening on port ${env.port}`)
 })

@@ -8,6 +8,7 @@ export type AppEnv = {
   authUsername?: string
   authPassword?: string
   authCookieSecret?: string
+  authCookieSecure?: boolean
 }
 
 function parseBool(raw: string | undefined, defaultValue: boolean) {
@@ -17,6 +18,15 @@ function parseBool(raw: string | undefined, defaultValue: boolean) {
   if (s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 'on') return true
   if (s === '0' || s === 'false' || s === 'no' || s === 'n' || s === 'off') return false
   return defaultValue
+}
+
+function parseOptionalBool(raw: string | undefined): boolean | undefined {
+  if (raw == null) return undefined
+  const s = raw.trim().toLowerCase()
+  if (!s) return undefined
+  if (s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 'on') return true
+  if (s === '0' || s === 'false' || s === 'no' || s === 'n' || s === 'off') return false
+  throw new Error('AUTH_COOKIE_SECURE must be a boolean (true/false)')
 }
 
 function parseIndexerUrls(raw: string | undefined) {
@@ -50,6 +60,18 @@ export function readEnv(): AppEnv {
   const authUsername = process.env.AUTH_USERNAME?.trim() || undefined
   const authPassword = process.env.AUTH_PASSWORD?.trim() || undefined
   const authCookieSecret = process.env.AUTH_COOKIE_SECRET?.trim() || undefined
+  const authCookieSecure = parseOptionalBool(process.env.AUTH_COOKIE_SECURE)
 
-  return { port, torboxBaseUrl, torboxApiKey, indexerUrls, logHttp, logHttpBody, authUsername, authPassword, authCookieSecret }
+  return {
+    port,
+    torboxBaseUrl,
+    torboxApiKey,
+    indexerUrls,
+    logHttp,
+    logHttpBody,
+    authUsername,
+    authPassword,
+    authCookieSecret,
+    authCookieSecure,
+  }
 }
