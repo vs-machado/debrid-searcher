@@ -124,6 +124,16 @@ export default function SearchPage() {
     return `${Math.round(Math.max(0, Math.min(100, progress)))}%`
   }
 
+  function formatTrackedTime(ts: number) {
+    if (!Number.isFinite(ts)) return 'N/A'
+    return new Date(ts).toLocaleString(undefined, {
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
   async function doSearch() {
     const res = await runSearch()
     if (res.ok) {
@@ -415,6 +425,46 @@ export default function SearchPage() {
               ) : (
                 <div className="font-mono text-[10px] uppercase tracking-widest opacity-40">No tracked torrents.</div>
               )}
+
+              <div className="border-t border-base-content/5 pt-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-60">Added_Torrents_History</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest opacity-35">{trackedList.length} saved</div>
+                </div>
+                {trackedList.length ? (
+                  <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto custom-scrollbar pr-1">
+                    {trackedList.map((t) => (
+                      <div key={`history-${t.key}`} className="tracker-history-row">
+                        <div className="min-w-0">
+                          <div className="font-display text-xs font-bold uppercase tracking-tight line-clamp-1">{t.title}</div>
+                          <div className="mt-0.5 font-mono text-[8px] uppercase tracking-widest opacity-40">
+                            ADDED {formatTrackedTime(t.addedAt)} / UPDATED {formatTrackedTime(t.updatedAt)}
+                          </div>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-2">
+                          <span className="font-mono text-[9px] text-base-content/50 w-9 text-right">{formatProgress(t.progress) || '--'}</span>
+                          <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                            {t.phase}
+                          </span>
+                          {t.phase === 'ready' && (
+                            <button
+                              className="btn btn-xs h-7 min-h-0 px-2 font-mono text-[9px] border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+                              onClick={() => void downloadFromTorbox(t.magnet, t.infoHash)}
+                              disabled={!t.magnet || isModalDownloading}
+                              type="button"
+                              title="DOWNLOAD_FROM_HISTORY"
+                            >
+                              DL
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="font-mono text-[10px] uppercase tracking-widest opacity-35">History is empty.</div>
+                )}
+              </div>
             </div>
           </section>
         )}

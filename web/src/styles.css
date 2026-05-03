@@ -247,6 +247,17 @@ body {
   border-color: oklch(65% 0.2 25 / 0.38);
 }
 
+.tracker-history-row {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid oklch(28% 0.02 240 / 0.48);
+  background: oklch(10% 0.02 240 / 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
 .torrent-progress-track {
   height: 0.35rem;
   min-width: 7rem;
