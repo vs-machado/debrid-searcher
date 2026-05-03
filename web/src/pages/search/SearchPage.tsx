@@ -330,26 +330,6 @@ export default function SearchPage() {
 
         <div className="flex flex-col md:items-end gap-2 text-right">
           <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em] leading-none">
-            <button
-              className={`relative w-8 h-8 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/40 hover:text-primary hover:border-primary/40'}`}
-              onClick={() => setShowTracker((v) => !v)}
-              type="button"
-              title="TORBOX_TRACKER"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="7" />
-                <circle cx="12" cy="12" r="2" />
-                <path d="M12 2v3" />
-                <path d="M12 19v3" />
-                <path d="M2 12h3" />
-                <path d="M19 12h3" />
-              </svg>
-              {trackedList.length > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-sm bg-primary text-primary-content text-[8px] leading-none">
-                  {trackedList.length}
-                </span>
-              )}
-            </button>
             <span className="text-primary font-bold">{session?.username || 'ANON'}</span>
             <button 
               onClick={async () => {
@@ -522,6 +502,29 @@ export default function SearchPage() {
                 ) : (
                   <div>READY: WAITING_FOR_COMMAND</div>
                 )}
+                <button
+                  className={`relative h-8 px-2 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/50 hover:text-primary hover:border-primary/40'}`}
+                  onClick={() => setShowTracker((v) => !v)}
+                  type="button"
+                  title="TORBOX_TRACKER"
+                >
+                  <span className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="7" />
+                      <circle cx="12" cy="12" r="2" />
+                      <path d="M12 2v3" />
+                      <path d="M12 19v3" />
+                      <path d="M2 12h3" />
+                      <path d="M19 12h3" />
+                    </svg>
+                    <span className="text-[9px] uppercase tracking-widest">TRACK</span>
+                  </span>
+                  {trackedList.length > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-sm bg-primary text-primary-content text-[8px] leading-none">
+                      {trackedList.length}
+                    </span>
+                  )}
+                </button>
               </div>
 
               <div className="flex items-center gap-3">
