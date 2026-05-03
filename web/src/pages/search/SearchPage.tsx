@@ -329,10 +329,6 @@ export default function SearchPage() {
         </div>
 
         <div className="flex flex-col md:items-end gap-2 text-right">
-          <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-widest opacity-60 leading-none">
-            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
-            System_Operational
-          </div>
           <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em] leading-none">
             <button
               className={`relative w-8 h-8 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/40 hover:text-primary hover:border-primary/40'}`}
