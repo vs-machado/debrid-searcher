@@ -9,6 +9,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/" element={<SearchPage />} />
+        <Route path="/history" element={<SearchPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

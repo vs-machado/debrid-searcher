@@ -78,16 +78,26 @@ function isTorrentReady(v: unknown) {
 
   const status = lowerText(pickTorrentStatus(v))
   const label = lowerText(pickTorrentLabel(v))
+  const progress = pickTorrentProgress(v)
   const readyFlag = (v as any).download_ready ?? (v as any).downloadReady ?? (v as any).ready
   const cachedFlag = (v as any).cached ?? (v as any).is_cached ?? (v as any).isCached
 
   return (
     readyFlag === true ||
     cachedFlag === true ||
+    progress === 100 ||
     status === 'cached' ||
+    status === 'completed' ||
+    status === 'complete' ||
+    status === 'finished' ||
+    status === 'seeding' ||
     status === 'download ready' ||
     status === 'download_ready' ||
     label === 'cached' ||
+    label === 'completed' ||
+    label === 'complete' ||
+    label === 'finished' ||
+    label === 'seeding' ||
     label === 'download ready' ||
     label === 'download_ready'
   )

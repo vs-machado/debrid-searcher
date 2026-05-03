@@ -185,4 +185,24 @@ describe('api', () => {
     expect(res.body?.cached).toBe(true)
     expect(res.body?.torrentId).toBe(654)
   })
+
+  it('GET /api/torbox/status treats completed TorBox torrents as ready', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: { id: 777, hash: 'ABCDEF123456', download_state: 'completed', progress: 1 } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    const app = createApp(makeEnv({ torboxApiKey: 'tb-key' }))
+    const agent = request.agent(app)
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'pw' }).expect(200)
+
+    const res = await agent.get('/api/torbox/status?torrentId=777')
+
+    expect(res.status).toBe(200)
+    expect(res.body?.ready).toBe(true)
+    expect(res.body?.cached).toBe(true)
+    expect(res.body?.progress).toBe(100)
+  })
 })

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { SearchResult, TorboxTrackedTorrent } from './types'
 import ToastHost from './components/ToastHost'
 import ResultCard from './components/ResultCard'
@@ -11,12 +11,14 @@ import { useTorbox } from './hooks/useTorbox'
 import { useAuthSession } from '../login/hooks/useAuth'
 
 type ViewMode = 'cached' | 'all'
-const TRACKED_TORRENTS_KEY = 'debrid_downloader.torbox.tracked'
+const TORRENT_HISTORY_KEY = 'debrid_downloader.torbox.tracked'
 
 export default function SearchPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { logout, session, loading: authLoading } = useAuthSession()
   const [view, setView] = useState<ViewMode>('cached')
+  const currentPage = location.pathname === '/history' ? 'history' : 'search'
 
   if (!authLoading && !session) {
     return <Navigate to="/login" />
@@ -32,18 +34,15 @@ export default function SearchPage() {
   const [isModalDownloading, setIsModalDownloading] = useState(false)
   const [trackedTorrents, setTrackedTorrents] = useState<Record<string, TorboxTrackedTorrent>>(() => {
     try {
-      const raw = window.localStorage.getItem(TRACKED_TORRENTS_KEY)
+      const raw = window.localStorage.getItem(TORRENT_HISTORY_KEY)
       if (!raw) return {}
       const parsed = JSON.parse(raw) as Record<string, TorboxTrackedTorrent>
       return parsed && typeof parsed === 'object' ? parsed : {}
     } catch {
-      window.localStorage.removeItem(TRACKED_TORRENTS_KEY)
+      window.localStorage.removeItem(TORRENT_HISTORY_KEY)
       return {}
     }
   })
-  const [showTracker, setShowTracker] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [orderBy, setOrderBy] = useState<'relevance' | 'size' | 'seeds'>('relevance')
@@ -65,7 +64,7 @@ export default function SearchPage() {
   })
 
   useEffect(() => {
-    window.localStorage.setItem(TRACKED_TORRENTS_KEY, JSON.stringify(trackedTorrents))
+    window.localStorage.setItem(TORRENT_HISTORY_KEY, JSON.stringify(trackedTorrents))
   }, [trackedTorrents])
 
   useEffect(() => {
@@ -201,7 +200,7 @@ export default function SearchPage() {
   function scheduleReadyPoll(target: { key: string; torrentId?: number; infoHash?: string; magnet?: string }, attempt = 1) {
     if (!target.key || (!target.torrentId && !target.infoHash)) return
 
-    const delayMs = attempt === 1 ? 1200 : 10000
+    const delayMs = attempt === 1 ? 800 : attempt <= 8 ? 2500 : attempt <= 24 ? 5000 : 10000
     if (pollTimersRef.current[target.key]) window.clearTimeout(pollTimersRef.current[target.key])
 
     pollTimersRef.current[target.key] = window.setTimeout(async () => {
@@ -261,16 +260,16 @@ export default function SearchPage() {
           title: result.title,
           magnet: result.magnet,
           infoHash: result.infoHash,
-          phase: 'checking',
+          phase: 'added',
           torrentId: res.torrentId,
-          message: 'Checking TorBox readiness',
+          progress: 0,
+          message: 'Adding in TorBox',
           addedAt: prev[key]?.addedAt ?? Date.now(),
           updatedAt: Date.now(),
         },
       }))
       push('success', 'Torrent added to TorBox', 'Checking readiness now.')
       if (res.torrentId || result.infoHash) {
-        setShowTracker(true)
         scheduleReadyPoll({ key, torrentId: res.torrentId, infoHash: result.infoHash, magnet: result.magnet })
       } else {
         updateTracked(key, { phase: 'failed', message: 'TorBox did not return an id and this result has no info hash' })
@@ -323,24 +322,37 @@ export default function SearchPage() {
             loading="eager"
           />
           <div className="min-w-0">
-            <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tighter leading-none uppercase">
-              DEBRID <span className="hidden sm:inline text-primary/80">SEARCHER</span>
+            <h1 className="font-display text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-none uppercase">
+              DEBRID <span className="text-primary/80">SEARCHER</span>
             </h1>
           </div>
         </div>
 
-        <button
-          className="md:hidden w-9 h-9 grid place-items-center border border-base-content/10 text-base-content/70 hover:text-primary hover:border-primary/40"
-          onClick={() => setShowMobileMenu(true)}
-          type="button"
-          title="OPEN_MENU"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-            <path d="M4 6h16" />
-            <path d="M4 12h16" />
-            <path d="M4 18h16" />
-          </svg>
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            className={`relative w-9 h-9 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/60 hover:text-primary hover:border-primary/40'}`}
+            onClick={() => navigate('/history')}
+            type="button"
+            title="TORRENT_HISTORY"
+          >
+            <ListIcon className="w-4 h-4" />
+            {trackedList.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-sm bg-primary text-primary-content text-[8px] leading-none">
+                {trackedList.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={async () => {
+              await logout()
+              navigate('/login')
+            }}
+            className="h-9 px-2 border border-primary/30 text-primary/80 font-mono text-[8px] uppercase tracking-widest"
+            type="button"
+          >
+            Logout
+          </button>
+        </div>
 
         <div className="hidden md:flex flex-col md:items-end gap-2 text-right">
           <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em] leading-none">
@@ -358,127 +370,52 @@ export default function SearchPage() {
         </div>
       </nav>
 
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <button className="absolute inset-0 bg-black/55" onClick={() => setShowMobileMenu(false)} type="button" aria-label="Close menu backdrop" />
-          <aside className="absolute right-0 top-0 h-full w-[min(20rem,86vw)] bg-base-200 border-l border-base-content/10 shadow-2xl p-5 flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-60">Menu</div>
-              <button
-                className="w-9 h-9 grid place-items-center border border-base-content/10 text-base-content/70 hover:text-primary hover:border-primary/40"
-                onClick={() => setShowMobileMenu(false)}
-                type="button"
-                title="CLOSE_MENU"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-3 border border-base-content/10 bg-base-300/40">
-              <div className="font-mono text-[9px] uppercase tracking-widest opacity-40 mb-1">Logged_In</div>
-              <div className="font-display text-xl font-bold uppercase">{session?.username || 'ANON'}</div>
-            </div>
-            <button
-              className="btn btn-outline rounded-sm justify-start font-mono uppercase tracking-widest text-[10px]"
-              onClick={() => {
-                setShowTracker((v) => !v)
-                setShowMobileMenu(false)
-              }}
-              type="button"
-            >
-              Toggle_Tracker ({trackedList.length})
-            </button>
-            <button
-              onClick={async () => {
-                await logout()
-                setShowMobileMenu(false)
-                navigate('/login')
-              }}
-              className="btn btn-ghost border border-primary/30 rounded-sm justify-start font-mono uppercase tracking-widest text-primary/80 text-[10px]"
-            >
-              Disconnect
-            </button>
-          </aside>
-        </div>
-      )}
-
       <main className="flex-1 min-h-0 max-w-6xl w-full mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col gap-4 md:gap-6 overflow-hidden">
-        {showTracker && (
-          <section className="machined-card p-0.5 rounded-sm shrink-0 animate-rise">
-            <div className="bg-base-200/50 px-3 md:px-4 py-3 flex flex-col gap-3 max-h-[38dvh] md:max-h-none overflow-y-auto md:overflow-visible custom-scrollbar">
-              <div className="flex items-center justify-between gap-3">
+        {currentPage === 'history' && (
+          <section className="machined-card p-0.5 rounded-sm flex-1 min-h-0 animate-rise">
+            <div className="bg-base-200/50 p-4 md:p-5 h-full min-h-0 flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-base-content/5 pb-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full ${activeTrackCount ? 'bg-warning animate-pulse' : 'bg-success'}`} />
-                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">TorBox_Tracker</div>
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">Torrent_History</div>
+                    <div className="mt-1 font-mono text-[9px] uppercase tracking-widest opacity-40">
+                      ACTIVE: {activeTrackCount} / READY: {readyTrackCount} / SAVED: {trackedList.length}
+                    </div>
+                  </div>
                 </div>
-                <div className="font-mono text-[9px] uppercase tracking-widest opacity-40">
-                  ACTIVE: {activeTrackCount} / READY: {readyTrackCount}
-                </div>
+                <button
+                  className="btn btn-sm btn-ghost border border-base-content/10 rounded-sm font-mono uppercase tracking-widest text-[10px]"
+                  onClick={() => navigate('/')}
+                  type="button"
+                >
+                  Back_To_Search
+                </button>
               </div>
 
               {trackedList.length ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {trackedList.slice(0, 6).map((t) => (
-                    <div key={t.key} className={`tracker-row ${t.phase === 'ready' ? 'tracker-row-ready' : t.phase === 'failed' ? 'tracker-row-failed' : 'tracker-row-active'}`}>
-                      <div className="min-w-0">
-                        <div className="font-display text-sm font-bold uppercase tracking-tight leading-tight line-clamp-1">{t.title}</div>
-                        <div className="mt-1 font-mono text-[9px] uppercase tracking-widest opacity-50">
-                          {t.message || t.label || t.status || t.phase}
-                        </div>
-                        {t.progress !== undefined && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <div className="torrent-progress-track">
-                              <div className={`torrent-progress-fill ${t.phase === 'ready' ? 'torrent-progress-ready' : ''}`} style={{ width: `${Math.max(0, Math.min(100, t.progress))}%` }} />
-                            </div>
-                            <span className="font-mono text-[9px] text-base-content/50 w-9 text-right">{formatProgress(t.progress)}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="shrink-0 flex items-center gap-2">
-                        <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
-                          {t.phase}
-                        </span>
-                        {t.phase === 'ready' && (
-                          <button
-                            className="btn btn-xs h-7 min-h-0 px-2 font-mono text-[9px] border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
-                            onClick={() => void downloadFromTorbox(t.magnet, t.infoHash)}
-                            disabled={!t.magnet || isModalDownloading}
-                            type="button"
-                            title="DOWNLOAD_TRACKED_TORRENT"
-                          >
-                            DL
-                          </button>
-                        )}
-                        <button className="btn btn-xs btn-ghost h-7 min-h-0 px-2 font-mono text-[9px]" onClick={() => removeTracked(t.key)} type="button">
-                          X
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="font-mono text-[10px] uppercase tracking-widest opacity-40">No tracked torrents.</div>
-              )}
-
-              <div className="border-t border-base-content/5 pt-3">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-60">Added_Torrents_History</div>
-                  <div className="font-mono text-[9px] uppercase tracking-widest opacity-35">{trackedList.length} saved</div>
-                </div>
-                {trackedList.length ? (
-                  <div className="grid grid-cols-1 gap-1.5 max-h-32 md:max-h-44 overflow-y-auto custom-scrollbar pr-1">
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+                  <div className="grid grid-cols-1 gap-2">
                     {trackedList.map((t) => (
-                      <div key={`history-${t.key}`} className="tracker-history-row">
+                      <div key={t.key} className={`tracker-row ${t.phase === 'ready' ? 'tracker-row-ready' : t.phase === 'failed' ? 'tracker-row-failed' : 'tracker-row-active'}`}>
                         <div className="min-w-0">
-                          <div className="font-display text-xs font-bold uppercase tracking-tight line-clamp-1">{t.title}</div>
-                          <div className="mt-0.5 font-mono text-[8px] uppercase tracking-widest opacity-40">
+                          <div className="font-display text-sm font-bold uppercase tracking-tight leading-tight line-clamp-1">{t.title}</div>
+                          <div className="mt-1 font-mono text-[9px] uppercase tracking-widest opacity-50">
+                            {t.message || t.label || t.status || t.phase}
+                          </div>
+                          <div className="mt-1 font-mono text-[8px] uppercase tracking-widest opacity-35">
                             ADDED {formatTrackedTime(t.addedAt)} / UPDATED {formatTrackedTime(t.updatedAt)}
                           </div>
+                          {t.progress !== undefined && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <div className="torrent-progress-track">
+                                <div className={`torrent-progress-fill ${t.phase === 'ready' ? 'torrent-progress-ready' : ''}`} style={{ width: `${Math.max(0, Math.min(100, t.progress))}%` }} />
+                              </div>
+                              <span className="font-mono text-[9px] text-base-content/50 w-9 text-right">{formatProgress(t.progress)}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="shrink-0 flex items-center gap-2">
-                          <span className="font-mono text-[9px] text-base-content/50 w-9 text-right">{formatProgress(t.progress) || '--'}</span>
                           <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
                             {t.phase}
                           </span>
@@ -493,26 +430,32 @@ export default function SearchPage() {
                               DL
                             </button>
                           )}
+                          <button className="btn btn-xs btn-ghost h-7 min-h-0 px-2 font-mono text-[9px]" onClick={() => removeTracked(t.key)} type="button">
+                            X
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="font-mono text-[10px] uppercase tracking-widest opacity-35">History is empty.</div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="empty-state flex-1 flex flex-col justify-center">
+                  <h2 className="font-display text-xl font-bold uppercase tracking-tight">HISTORY_EMPTY</h2>
+                  <p className="mt-1 text-xs opacity-60">Added torrents will appear here.</p>
+                </div>
+              )}
             </div>
           </section>
         )}
 
         {/* Control Center */}
-        <section className="machined-card p-0.5 rounded-sm shrink-0">
-          <div className="bg-base-200/40 p-5 md:p-6 flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-              <div className="md:col-span-8 flex flex-col gap-2">
-                <span className="text-[9px] font-mono uppercase tracking-[0.2em] opacity-50">Main_Search_Input</span>
+        {currentPage === 'search' && <section className="machined-card p-0.5 rounded-sm shrink-0">
+          <div className="bg-base-200/40 p-3 md:p-6 flex flex-col gap-3 md:gap-4">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-12 gap-2 md:gap-4 items-end">
+              <div className="min-w-0 md:col-span-8 flex flex-col gap-2">
+                <span className="hidden md:inline text-[9px] font-mono uppercase tracking-[0.2em] opacity-50">Main_Search_Input</span>
                 <input
-                  className="input w-full bg-base-300/40 border border-primary/40 font-mono text-base focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-12 rounded-sm transition-all"
+                  className="input w-full bg-base-300/40 border border-primary/40 font-mono text-sm md:text-base focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-10 md:h-12 rounded-sm transition-all"
                   type="search"
                   placeholder="E.G. DUNE_2024_REMUX"
                   value={q}
@@ -524,8 +467,8 @@ export default function SearchPage() {
                 />
               </div>
 
-              <div className="md:col-span-4 flex gap-3">
-                <label className="btn btn-outline border-base-content/10 flex-1 hover:bg-base-100 hover:text-primary rounded-sm h-12 min-h-0">
+              <div className="md:col-span-4 flex gap-2 md:gap-3">
+                <label className="hidden md:flex btn btn-outline border-base-content/10 flex-1 hover:bg-base-100 hover:text-primary rounded-sm h-10 md:h-12 min-h-0">
                   <input
                     type="checkbox"
                     className="toggle toggle-primary toggle-xs mr-2"
@@ -536,14 +479,14 @@ export default function SearchPage() {
                 </label>
 
                 <button 
-                  className="btn btn-primary h-12 min-h-0 px-8 rounded-sm font-mono uppercase tracking-widest group" 
+                  className="btn btn-primary h-10 md:h-12 min-h-0 px-4 md:px-8 rounded-sm font-mono uppercase tracking-widest group" 
                   onClick={() => void doSearch()} 
                   disabled={loading}
                 >
                   {loading ? (
                     <span className="loading loading-spinner loading-xs" />
                   ) : (
-                    <span className="flex items-center gap-2 text-xs">
+                    <span className="flex items-center gap-2 text-[11px] md:text-xs">
                       Run
                       <span className="animate-blink">_</span>
                     </span>                    
@@ -552,7 +495,32 @@ export default function SearchPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1.5 border-t border-base-content/5">
+            <div className="md:hidden grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center">
+              <label className="btn btn-outline border-base-content/10 hover:bg-base-100 hover:text-primary rounded-sm h-9 min-h-0 justify-start">
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary toggle-xs mr-2"
+                  checked={view === 'cached'}
+                  onChange={(e) => setView(e.target.checked ? 'cached' : 'all')}
+                />
+                <span className="text-[9px] font-mono uppercase tracking-widest">Cached</span>
+              </label>
+              <label className="flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm">
+                <span className="font-mono text-[8px] uppercase tracking-widest opacity-45">Filter</span>
+                <select
+                  className="bg-transparent font-mono text-[9px] uppercase tracking-widest outline-none"
+                  value={orderBy}
+                  onChange={(e) => setOrderBy(e.target.value as typeof orderBy)}
+                  aria-label="Filter results"
+                >
+                  <option value="relevance">Rel</option>
+                  <option value="size">Size</option>
+                  <option value="seeds">Seeds</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-3 py-1.5 border-t border-base-content/5">
               <div className="text-[10px] font-mono opacity-50 flex flex-wrap items-center gap-2 md:gap-4">
                 {data ? (
                   <>
@@ -564,20 +532,13 @@ export default function SearchPage() {
                 )}
                 <button
                   className={`relative h-8 px-2 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/50 hover:text-primary hover:border-primary/40'}`}
-                  onClick={() => setShowTracker((v) => !v)}
+                  onClick={() => navigate('/history')}
                   type="button"
-                  title="TORBOX_TRACKER"
+                  title="TORRENT_HISTORY"
                 >
                   <span className="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <circle cx="12" cy="12" r="7" />
-                      <circle cx="12" cy="12" r="2" />
-                      <path d="M12 2v3" />
-                      <path d="M12 19v3" />
-                      <path d="M2 12h3" />
-                      <path d="M19 12h3" />
-                    </svg>
-                    <span className="hidden sm:inline text-[9px] uppercase tracking-widest">TRACK</span>
+                    <ListIcon className="w-[15px] h-[15px]" />
+                    <span className="hidden sm:inline text-[9px] uppercase tracking-widest">HISTORY</span>
                   </span>
                   {trackedList.length > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-sm bg-primary text-primary-content text-[8px] leading-none">
@@ -617,7 +578,7 @@ export default function SearchPage() {
                 </div>
 
                 <button 
-                  className={`shrink-0 text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
+                  className={`hidden md:inline shrink-0 text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   type="button"
                 >
@@ -627,7 +588,7 @@ export default function SearchPage() {
             </div>
 
             {showAdvanced && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-base-content/5 animate-rise">
+              <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-base-content/5 animate-rise">
                 <ConfigCard 
                   title="STRICT_CACHE"
                   desc="Uncached lock."
@@ -676,10 +637,10 @@ export default function SearchPage() {
               </div>
             )}
           </div>
-        </section>
+        </section>}
 
         {/* Results Stream */}
-        <section className="flex-1 min-h-0 flex flex-col gap-4">
+        {currentPage === 'search' && <section className="flex-1 min-h-0 flex flex-col gap-4">
           {!data && !loading && (
             <div className="empty-state border-dashed opacity-50 flex-1 flex flex-col justify-center">
               <h2 className="font-display text-xl font-bold uppercase tracking-tight">ENGINE_IDLE</h2>
@@ -723,8 +684,8 @@ export default function SearchPage() {
                         strictCached={strictCached}
                         torboxState={trackedTorrents[resultKey(r)]}
                         onInspect={() => openDetails(r)}
-                        onAdd={() => void addToTorbox(r)}
-                        onDownload={() => void downloadFromTorbox(r.magnet, r.infoHash)}
+                        onAdd={() => addToTorbox(r)}
+                        onDownload={() => downloadFromTorbox(r.magnet, r.infoHash)}
                       />
                     ))}
                   </div>
@@ -760,7 +721,7 @@ export default function SearchPage() {
               </div>
             )
           )}
-        </section>
+        </section>}
       </main>
 
       {/* Details Dialog */}
@@ -836,6 +797,19 @@ export default function SearchPage() {
         </form>
       </dialog>
     </div>
+  )
+}
+
+function ListIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 6h13" />
+      <path d="M8 12h13" />
+      <path d="M8 18h13" />
+      <path d="M3 6h.01" />
+      <path d="M3 12h.01" />
+      <path d="M3 18h.01" />
+    </svg>
   )
 }
 

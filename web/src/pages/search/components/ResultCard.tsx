@@ -13,20 +13,21 @@ export default function ResultCard({
   r: SearchResult
   strictCached: boolean
   torboxState?: TorboxPollState
-  onAdd: () => void
-  onDownload: () => void
+  onAdd: () => void | Promise<void>
+  onDownload: () => void | Promise<void>
   onInspect: () => void
 }) {
   const [isAdding, setIsAdding] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const hasMagnet = !!r.magnet
   const isPolling = torboxState?.phase === 'added' || torboxState?.phase === 'checking'
+  const isAddingState = isAdding || isPolling
   const isCached = r.cached === true || torboxState?.phase === 'ready'
   const canAttempt = hasMagnet && (!strictCached || isCached || r.cached !== false)
 
   const addDisabled = !hasMagnet || isAdding || isDownloading || isPolling
   const dlDisabled = !hasMagnet || (strictCached && !isCached && r.cached === false) || isAdding || isDownloading || isPolling
-  const cacheLabel = isCached ? 'CACHED' : isPolling ? 'POLLING' : r.cached === false ? 'UNCACHED' : 'UNKNOWN'
+  const cacheLabel = isCached ? 'CACHED' : isAddingState ? 'ADDING' : r.cached === false ? 'UNCACHED' : 'UNKNOWN'
   const cacheTitle = torboxState?.message || torboxState?.label || torboxState?.status || cacheLabel
   const progress = torboxState?.progress
   const progressLabel = progress === undefined ? undefined : `${Math.round(Math.max(0, Math.min(100, progress)))}%`
@@ -52,13 +53,13 @@ export default function ResultCard({
   }
 
   return (
-    <div className={`machined-card group relative p-0.5 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors ${isPolling ? 'torrent-card-tracking' : ''} ${isCached && torboxState?.phase === 'ready' ? 'torrent-card-ready' : ''}`}>
-      <div className="bg-base-200/50 p-4 flex flex-col md:flex-row gap-5 items-start md:items-center">
+    <div className={`machined-card group relative p-0.5 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors ${isAddingState ? 'torrent-card-tracking' : ''} ${isCached && torboxState?.phase === 'ready' ? 'torrent-card-ready' : ''}`}>
+      <div className="bg-base-200/50 p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-5 items-start md:items-center">
         
         {/* Status indicator module */}
         <div className="shrink-0 flex items-center gap-3">
-          <div className={`relative w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : isPolling ? 'bg-warning animate-pulse' : r.cached === false ? 'bg-error opacity-40' : 'bg-base-content/20 opacity-40'} transition-all`}>
-            {isPolling && <span className="absolute inset-[-7px] rounded-full border border-warning/40 animate-tracker-ring" />}
+          <div className={`relative w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : isAddingState ? 'bg-warning animate-pulse' : r.cached === false ? 'bg-error opacity-40' : 'bg-base-content/20 opacity-40'} transition-all`}>
+            {isAddingState && <span className="absolute inset-[-7px] rounded-full border border-warning/40 animate-tracker-ring" />}
           </div>
         </div>
 
@@ -73,7 +74,7 @@ export default function ResultCard({
               {r.title}
             </h3>
             
-            <div className="mt-2 flex flex-wrap items-center gap-x-8 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 md:gap-x-8 gap-y-1.5 font-mono text-[10px] tracking-widest uppercase">
               <div className="w-28 shrink-0 opacity-40">
                 {Number.isFinite(r.seeders) && <span>SEEDS: {r.seeders}</span>}
               </div>
@@ -85,7 +86,7 @@ export default function ResultCard({
                   className={`badge badge-sm h-5 px-2 font-mono text-[9px] tracking-widest uppercase border ${
                     isCached
                       ? 'bg-success/10 text-success border-success/30'
-                      : isPolling
+                      : isAddingState
                         ? 'bg-warning/10 text-warning border-warning/30'
                       : r.cached === false
                         ? 'bg-error/10 text-error border-error/30'
@@ -95,18 +96,13 @@ export default function ResultCard({
                 >
                   {cacheLabel}
                 </span>
-                {isPolling && (
-                  <span className="font-mono text-[9px] text-warning/80 uppercase tracking-widest">
-                    {progressLabel ? `${progressLabel} / ${torboxState?.status || 'syncing'}` : torboxState?.status || 'syncing'}
-                  </span>
-                )}
               </div>
               {isPolling && progress !== undefined && (
-                <div className="mt-2 flex items-center gap-2 max-w-sm">
+                <div className="basis-full mt-1 flex items-center gap-2 max-w-sm">
                   <div className="torrent-progress-track">
                     <div className="torrent-progress-fill" style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
                   </div>
-                  <span className="font-mono text-[9px] text-base-content/40 w-9 text-right">{progressLabel}</span>
+                  <span className="font-mono text-[9px] text-warning w-9 text-right leading-none">{progressLabel}</span>
                 </div>
               )}
             </div>
