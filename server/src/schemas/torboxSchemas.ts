@@ -11,3 +11,10 @@ export const torboxDownloadSchema = z.object({
   addOnlyIfCached: z.boolean().optional().default(true),
   zipLink: z.boolean().optional().default(true),
 })
+
+export const torboxStatusSchema = z.object({
+  torrentId: z.coerce.number().int().positive().optional(),
+  infoHash: z.string().trim().min(8).optional(),
+}).refine((v) => v.torrentId !== undefined || !!v.infoHash, {
+  message: 'torrentId or infoHash is required',
+})

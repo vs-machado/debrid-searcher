@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import { apiPost } from '../api'
-import type { AddResponse, DownloadResponse } from '../types'
+import { apiGet, apiPost } from '../api'
+import type { AddResponse, DownloadResponse, TorboxStatusResponse } from '../types'
 
 export function useTorbox(params: {
   strictCached: boolean
@@ -32,5 +32,12 @@ export function useTorbox(params: {
     [params.strictCached, params.zipLink, params.onLinkReady],
   )
 
-  return { add, download }
+  const status = useCallback(async (input: { torrentId?: number; infoHash?: string }) => {
+    const qs = new URLSearchParams()
+    if (input.torrentId !== undefined) qs.set('torrentId', String(input.torrentId))
+    if (input.infoHash) qs.set('infoHash', input.infoHash)
+    return await apiGet<TorboxStatusResponse>(`/api/torbox/status?${qs.toString()}`)
+  }, [])
+
+  return { add, download, status }
 }

@@ -163,6 +163,114 @@ body {
   animation: blink 1.2s step-end infinite;
 }
 
+@keyframes trackerPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 oklch(80% 0.15 70 / 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 6px oklch(80% 0.15 70 / 0);
+  }
+}
+
+@keyframes trackerRing {
+  from {
+    opacity: 0.75;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes trackerScan {
+  0% { transform: translateX(-35%); opacity: 0; }
+  20%, 80% { opacity: 0.45; }
+  100% { transform: translateX(115%); opacity: 0; }
+}
+
+.animate-tracker-pulse {
+  animation: trackerPulse 1.8s ease-out infinite;
+}
+
+.animate-tracker-ring {
+  animation: trackerRing 1.2s ease-out infinite;
+}
+
+.torrent-card-tracking::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, oklch(80% 0.15 70 / 0.16), transparent);
+  animation: trackerScan 2.5s linear infinite;
+}
+
+.torrent-card-ready {
+  border-color: oklch(75% 0.15 150 / 0.65);
+  box-shadow:
+    0 12px 34px -16px oklch(75% 0.15 150 / 0.55),
+    inset 0 1px 0 oklch(75% 0.15 150 / 0.24);
+}
+
+.tracker-row {
+  min-height: 3.25rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid oklch(30% 0.02 240 / 0.7);
+  background: oklch(12% 0.02 240 / 0.34);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.tracker-row-active {
+  border-color: oklch(80% 0.15 70 / 0.38);
+}
+
+.tracker-row-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, oklch(80% 0.15 70 / 0.1), transparent);
+  animation: trackerScan 3s linear infinite;
+}
+
+.tracker-row-ready {
+  border-color: oklch(75% 0.15 150 / 0.38);
+}
+
+.tracker-row-failed {
+  border-color: oklch(65% 0.2 25 / 0.38);
+}
+
+.torrent-progress-track {
+  height: 0.35rem;
+  min-width: 7rem;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid oklch(30% 0.02 240 / 0.8);
+  background: oklch(8% 0.02 240 / 0.65);
+}
+
+.torrent-progress-fill {
+  height: 100%;
+  min-width: 2px;
+  background:
+    linear-gradient(90deg, oklch(80% 0.15 70 / 0.75), oklch(75% 0.15 180 / 0.9)),
+    repeating-linear-gradient(90deg, transparent 0 8px, oklch(100% 0 0 / 0.12) 8px 10px);
+  box-shadow: 0 0 14px oklch(80% 0.15 70 / 0.22);
+  transition: width 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.torrent-progress-ready {
+  background: linear-gradient(90deg, oklch(75% 0.15 150 / 0.75), oklch(75% 0.15 180 / 0.9));
+  box-shadow: 0 0 14px oklch(75% 0.15 150 / 0.26);
+}
+
 /* Custom scrollbar for results container */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;

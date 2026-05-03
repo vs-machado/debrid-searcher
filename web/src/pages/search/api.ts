@@ -1,5 +1,5 @@
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path, { credentials: 'include' })
+  const res = await fetch(path, { credentials: 'include', cache: 'no-store' })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as T
 }

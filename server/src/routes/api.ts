@@ -6,7 +6,7 @@ import { createSearchService } from '../services/searchService.js'
 import { createTorboxService } from '../services/torboxService.js'
 import { createAuthService } from '../services/authService.js'
 import { createSearchController } from '../controllers/searchController.js'
-import { createTorboxAddController, createTorboxDownloadController } from '../controllers/torboxController.js'
+import { createTorboxAddController, createTorboxDownloadController, createTorboxStatusController } from '../controllers/torboxController.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
 export function createApiRouter(env: AppEnv) {
@@ -24,6 +24,7 @@ export function createApiRouter(env: AppEnv) {
   router.use(requireAuth(authService))
   router.get('/search', createSearchController(searchService))
   router.post('/torbox/add', createTorboxAddController(torboxService))
+  router.get('/torbox/status', createTorboxStatusController(torboxService))
   router.post('/torbox/download', createTorboxDownloadController(torboxService))
 
   return router

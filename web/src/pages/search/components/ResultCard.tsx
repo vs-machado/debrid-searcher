@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import type { SearchResult } from '../types'
+import type { SearchResult, TorboxPollState } from '../types'
 import { fmtBytes } from '../lib/format'
 
 export default function ResultCard({
   r,
   strictCached,
+  torboxState,
   onAdd,
   onDownload,
   onInspect,
 }: {
   r: SearchResult
   strictCached: boolean
+  torboxState?: TorboxPollState
   onAdd: () => void
   onDownload: () => void
   onInspect: () => void
@@ -18,11 +20,16 @@ export default function ResultCard({
   const [isAdding, setIsAdding] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const hasMagnet = !!r.magnet
-  const isCached = r.cached === true
-  const canAttempt = hasMagnet && (!strictCached || r.cached !== false)
+  const isPolling = torboxState?.phase === 'added' || torboxState?.phase === 'checking'
+  const isCached = r.cached === true || torboxState?.phase === 'ready'
+  const canAttempt = hasMagnet && (!strictCached || isCached || r.cached !== false)
 
-  const addDisabled = !hasMagnet || isAdding || isDownloading
-  const dlDisabled = !hasMagnet || (strictCached && r.cached === false) || isAdding || isDownloading
+  const addDisabled = !hasMagnet || isAdding || isDownloading || isPolling
+  const dlDisabled = !hasMagnet || (strictCached && !isCached && r.cached === false) || isAdding || isDownloading || isPolling
+  const cacheLabel = isCached ? 'CACHED' : isPolling ? 'POLLING' : r.cached === false ? 'UNCACHED' : 'UNKNOWN'
+  const cacheTitle = torboxState?.message || torboxState?.label || torboxState?.status || cacheLabel
+  const progress = torboxState?.progress
+  const progressLabel = progress === undefined ? undefined : `${Math.round(Math.max(0, Math.min(100, progress)))}%`
 
   const handleAdd = async () => {
     if (addDisabled) return
@@ -45,12 +52,14 @@ export default function ResultCard({
   }
 
   return (
-    <div className="machined-card group relative p-0.5 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors">
+    <div className={`machined-card group relative p-0.5 rounded-sm overflow-hidden animate-rise hover:border-primary/40 transition-colors ${isPolling ? 'torrent-card-tracking' : ''} ${isCached && torboxState?.phase === 'ready' ? 'torrent-card-ready' : ''}`}>
       <div className="bg-base-200/50 p-4 flex flex-col md:flex-row gap-5 items-start md:items-center">
         
         {/* Status indicator module */}
         <div className="shrink-0 flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : r.cached === false ? 'bg-error opacity-40' : 'bg-base-content/20 opacity-40'} transition-all`} />
+          <div className={`relative w-2.5 h-2.5 rounded-full ${isCached ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : isPolling ? 'bg-warning animate-pulse' : r.cached === false ? 'bg-error opacity-40' : 'bg-base-content/20 opacity-40'} transition-all`}>
+            {isPolling && <span className="absolute inset-[-7px] rounded-full border border-warning/40 animate-tracker-ring" />}
+          </div>
         </div>
 
         {/* Content module */}
@@ -76,14 +85,30 @@ export default function ResultCard({
                   className={`badge badge-sm h-5 px-2 font-mono text-[9px] tracking-widest uppercase border ${
                     isCached
                       ? 'bg-success/10 text-success border-success/30'
+                      : isPolling
+                        ? 'bg-warning/10 text-warning border-warning/30'
                       : r.cached === false
                         ? 'bg-error/10 text-error border-error/30'
                         : 'bg-base-content/5 text-base-content/40 border-base-content/10'
                   }`}
+                  title={cacheTitle}
                 >
-                  {isCached ? 'CACHED' : r.cached === false ? 'UNCACHED' : 'UNKNOWN'}
+                  {cacheLabel}
                 </span>
+                {isPolling && (
+                  <span className="font-mono text-[9px] text-warning/80 uppercase tracking-widest">
+                    {progressLabel ? `${progressLabel} / ${torboxState?.status || 'syncing'}` : torboxState?.status || 'syncing'}
+                  </span>
+                )}
               </div>
+              {isPolling && progress !== undefined && (
+                <div className="mt-2 flex items-center gap-2 max-w-sm">
+                  <div className="torrent-progress-track">
+                    <div className="torrent-progress-fill" style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
+                  </div>
+                  <span className="font-mono text-[9px] text-base-content/40 w-9 text-right">{progressLabel}</span>
+                </div>
+              )}
             </div>
           </button>
         </div>

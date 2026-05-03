@@ -11,6 +11,26 @@ export type SearchResult = {
   cached?: boolean
 }
 
+export type TorboxPollPhase = 'added' | 'checking' | 'ready' | 'failed'
+
+export type TorboxPollState = {
+  phase: TorboxPollPhase
+  torrentId?: number
+  status?: string
+  label?: string
+  progress?: number
+  message?: string
+}
+
+export type TorboxTrackedTorrent = TorboxPollState & {
+  key: string
+  title: string
+  magnet?: string
+  infoHash?: string
+  addedAt: number
+  updatedAt: number
+}
+
 export type SearchResponse = {
   query: string
   elapsedMs: number
@@ -22,6 +42,22 @@ export type SearchResponse = {
 export type AddResponse = {
   ok: boolean
   detail?: string
+  torrentId?: number
+  torbox?: unknown
+}
+
+export type TorboxStatusResponse = {
+  ok: boolean
+  detail?: string
+  torrentId?: number
+  infoHash?: string
+  found: boolean
+  ready: boolean
+  cached: boolean
+  status?: string
+  label?: string
+  progress?: number
+  refreshed?: boolean
   torbox?: unknown
 }
 

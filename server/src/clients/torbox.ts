@@ -1,5 +1,6 @@
 export type TorboxClientOpts = {
   baseUrl: string
+  relayBaseUrl?: string
   apiKey: string
 }
 
@@ -143,6 +144,7 @@ function interpretCheckCached(data: unknown, hashes: string[]) {
 
 export function torboxClient(opts: TorboxClientOpts) {
   const base = opts.baseUrl.replace(/\/+$/, '')
+  const relayBase = (opts.relayBaseUrl || 'https://relay.torbox.app').replace(/\/+$/, '')
 
   function chunk<T>(arr: T[], size: number): T[][] {
     if (size <= 0) return [arr]
@@ -235,6 +237,22 @@ export function torboxClient(opts: TorboxClientOpts) {
       if (params?.id !== undefined) url.searchParams.set('id', String(params.id))
       if (params?.offset !== undefined) url.searchParams.set('offset', String(params.offset))
       if (params?.limit !== undefined) url.searchParams.set('limit', String(params.limit))
+
+      const res = await fetch(url.toString(), {
+        method: 'GET',
+        headers: authHeaders(opts.apiKey),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as unknown
+      if (!res.ok) {
+        const detail = (data as any)?.detail || (data as any)?.error || `${res.status} ${res.statusText}`
+        throw new Error(String(detail))
+      }
+      return data
+    },
+
+    async requestTorrentUpdate(params: { userId: string; torrentId: number }) {
+      const url = new URL(`${relayBase}/v1/inactivecheck/torrent/${encodeURIComponent(params.userId)}/${encodeURIComponent(String(params.torrentId))}`)
 
       const res = await fetch(url.toString(), {
         method: 'GET',

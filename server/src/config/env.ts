@@ -1,6 +1,7 @@
 export type AppEnv = {
   port: number
   torboxBaseUrl: string
+  torboxRelayBaseUrl: string
   torboxApiKey?: string
   indexerUrls: string[]
   logHttp: boolean
@@ -51,6 +52,7 @@ export function readEnv(): AppEnv {
   if (!Number.isFinite(port)) throw new Error('PORT must be a number')
 
   const torboxBaseUrl = (process.env.TORBOX_BASE_URL || 'https://api.torbox.app').replace(/\/+$/, '')
+  const torboxRelayBaseUrl = (process.env.TORBOX_RELAY_BASE_URL || 'https://relay.torbox.app').replace(/\/+$/, '')
   const torboxApiKey = process.env.TORBOX_API_KEY?.trim() || undefined
   const indexerUrls = parseIndexerUrls(process.env.INDEXERS_TORZNAB_URLS)
 
@@ -65,6 +67,7 @@ export function readEnv(): AppEnv {
   return {
     port,
     torboxBaseUrl,
+    torboxRelayBaseUrl,
     torboxApiKey,
     indexerUrls,
     logHttp,

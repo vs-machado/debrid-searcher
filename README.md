@@ -136,12 +136,13 @@ docker rm debrid_searcher
 
 Defaults:
 
-- App: http://localhost:5175
+- App: http://localhost:5174
 - Jackett UI (if using the included service): http://localhost:9117
 
 ## API Documentation
 
 - `GET /api/search?q=...`: Search across indexers and check cache status.
 - `POST /api/torbox/add`: Add a magnet to TorBox account.
+- `GET /api/torbox/status?torrentId=...`: Check whether a TorBox torrent is ready to download.
 - `POST /api/torbox/download`: Request a direct download link from TorBox.
 - `GET /api/auth/session`: Check current login session.

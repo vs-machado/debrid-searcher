@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import type { SearchResult } from './types'
+import type { SearchResult, TorboxTrackedTorrent } from './types'
 import ToastHost from './components/ToastHost'
 import ResultCard from './components/ResultCard'
 import { fmtBytes } from './lib/format'
@@ -11,6 +11,7 @@ import { useTorbox } from './hooks/useTorbox'
 import { useAuthSession } from '../login/hooks/useAuth'
 
 type ViewMode = 'cached' | 'all'
+const TRACKED_TORRENTS_KEY = 'debrid_downloader.torbox.tracked'
 
 export default function SearchPage() {
   const navigate = useNavigate()
@@ -24,16 +25,29 @@ export default function SearchPage() {
   const [strictCached, setStrictCached] = useState(true)
   const [zipLink, setZipLink] = useState(true)
 
-  const { q, setQ, loading, data, cachedCount, run: runSearch } = useSearch()
+  const { q, setQ, loading, data, setData, cachedCount, run: runSearch } = useSearch()
   const [selected, setSelected] = useState<SearchResult | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isModalAdding, setIsModalAdding] = useState(false)
   const [isModalDownloading, setIsModalDownloading] = useState(false)
+  const [trackedTorrents, setTrackedTorrents] = useState<Record<string, TorboxTrackedTorrent>>(() => {
+    try {
+      const raw = window.localStorage.getItem(TRACKED_TORRENTS_KEY)
+      if (!raw) return {}
+      const parsed = JSON.parse(raw) as Record<string, TorboxTrackedTorrent>
+      return parsed && typeof parsed === 'object' ? parsed : {}
+    } catch {
+      window.localStorage.removeItem(TRACKED_TORRENTS_KEY)
+      return {}
+    }
+  })
+  const [showTracker, setShowTracker] = useState(false)
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [orderBy, setOrderBy] = useState<'relevance' | 'size' | 'seeds'>('relevance')
   const resultsContainerRef = useRef<HTMLDivElement>(null)
+  const pollTimersRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
     resultsContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -43,11 +57,22 @@ export default function SearchPage() {
   const { copyText } = useClipboard()
   const dialogRef = useRef<HTMLDialogElement | null>(null)
 
-  const { add: torboxAdd, download: torboxDownload } = useTorbox({
+  const { add: torboxAdd, download: torboxDownload, status: torboxStatus } = useTorbox({
     strictCached,
     zipLink,
     onLinkReady: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
   })
+
+  useEffect(() => {
+    window.localStorage.setItem(TRACKED_TORRENTS_KEY, JSON.stringify(trackedTorrents))
+  }, [trackedTorrents])
+
+  useEffect(() => {
+    return () => {
+      for (const id of Object.values(pollTimersRef.current)) window.clearTimeout(id)
+      pollTimersRef.current = {}
+    }
+  }, [])
 
   const results = useMemo(() => {
     if (!data) return []
@@ -86,6 +111,19 @@ export default function SearchPage() {
     setPage(1)
   }, [orderedResults.length, pageSize, orderBy])
 
+  const trackedList = useMemo(() => {
+    return Object.values(trackedTorrents).sort((a, b) => b.updatedAt - a.updatedAt)
+  }, [trackedTorrents])
+
+  const activeTrackCount = trackedList.filter((t) => t.phase === 'added' || t.phase === 'checking').length
+  const readyTrackCount = trackedList.filter((t) => t.phase === 'ready').length
+
+  function formatProgress(progress?: number) {
+    if (progress === undefined) return undefined
+    if (!Number.isFinite(progress)) return undefined
+    return `${Math.round(Math.max(0, Math.min(100, progress)))}%`
+  }
+
   async function doSearch() {
     const res = await runSearch()
     if (res.ok) {
@@ -105,12 +143,128 @@ export default function SearchPage() {
     }
   }
 
-  async function addToTorbox(magnet?: string) {
-    if (!magnet) return
+  function resultKey(input: Pick<SearchResult, 'infoHash' | 'magnet'>) {
+    return (input.infoHash?.trim().toLowerCase() || input.magnet || '').trim()
+  }
+
+  function setResultCached(target: { infoHash?: string; magnet?: string }) {
+    const key = resultKey(target)
+    if (!key) return
+
+    setData((prev) => {
+      if (!prev) return prev
+      const results = prev.results.map((r) => (resultKey(r) === key ? { ...r, cached: true } : r))
+      return { ...prev, results, cachedResults: results.filter((r) => r.cached) }
+    })
+    setSelected((prev) => (prev && resultKey(prev) === key ? { ...prev, cached: true } : prev))
+  }
+
+  function updateTracked(key: string, patch: Partial<TorboxTrackedTorrent>) {
+    setTrackedTorrents((prev) => {
+      const existing = prev[key]
+      if (!existing) return prev
+      return {
+        ...prev,
+        [key]: {
+          ...existing,
+          ...patch,
+          key,
+          updatedAt: Date.now(),
+        },
+      }
+    })
+  }
+
+  function removeTracked(key: string) {
+    if (pollTimersRef.current[key]) {
+      window.clearTimeout(pollTimersRef.current[key])
+      delete pollTimersRef.current[key]
+    }
+    setTrackedTorrents((prev) => {
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }
+
+  function scheduleReadyPoll(target: { key: string; torrentId?: number; infoHash?: string; magnet?: string }, attempt = 1) {
+    if (!target.key || (!target.torrentId && !target.infoHash)) return
+
+    const delayMs = attempt === 1 ? 1200 : 10000
+    if (pollTimersRef.current[target.key]) window.clearTimeout(pollTimersRef.current[target.key])
+
+    pollTimersRef.current[target.key] = window.setTimeout(async () => {
+      try {
+        const res = await torboxStatus({ torrentId: target.torrentId, infoHash: target.infoHash })
+        const nextTorrentId = res.torrentId ?? target.torrentId
+        const message = res.label || res.status || (res.found ? 'Waiting for TorBox' : 'Waiting for torrent record')
+
+        if (res.ready) {
+          delete pollTimersRef.current[target.key]
+          updateTracked(target.key, { phase: 'ready', torrentId: nextTorrentId, infoHash: target.infoHash || res.infoHash, status: res.status, label: res.label, progress: res.progress ?? 100, message: 'Ready in TorBox' })
+          setResultCached({ infoHash: target.infoHash || res.infoHash, magnet: target.magnet })
+          push('success', 'Torrent ready in TorBox', message)
+          return
+        }
+
+        updateTracked(target.key, { phase: 'checking', torrentId: nextTorrentId, status: res.status, label: res.label, progress: res.progress, message })
+
+        if (attempt >= 60) {
+          delete pollTimersRef.current[target.key]
+          updateTracked(target.key, { phase: 'failed', torrentId: nextTorrentId, status: res.status, label: res.label, progress: res.progress, message: 'Timed out waiting for TorBox readiness' })
+          push('warning', 'TorBox still processing', 'The torrent was added, but is not ready yet.')
+          return
+        }
+
+        scheduleReadyPoll({ ...target, torrentId: nextTorrentId }, attempt + 1)
+      } catch (e) {
+        delete pollTimersRef.current[target.key]
+        const message = e instanceof Error ? e.message : String(e)
+        updateTracked(target.key, { phase: 'failed', torrentId: target.torrentId, message })
+        push('warning', 'TorBox status check failed', message)
+      }
+    }, delayMs)
+  }
+
+  useEffect(() => {
+    for (const tracked of Object.values(trackedTorrents)) {
+      if ((tracked.phase === 'added' || tracked.phase === 'checking') && !pollTimersRef.current[tracked.key]) {
+        scheduleReadyPoll({ key: tracked.key, torrentId: tracked.torrentId, infoHash: tracked.infoHash, magnet: tracked.magnet })
+      }
+      if (tracked.phase === 'ready') {
+        setResultCached({ infoHash: tracked.infoHash, magnet: tracked.magnet })
+      }
+    }
+  }, [trackedTorrents])
+
+  async function addToTorbox(result?: SearchResult | null) {
+    if (!result?.magnet) return
+    const key = resultKey(result)
     setIsModalAdding(true)
     try {
-      const res = await torboxAdd(magnet)
-      push('success', res.detail || 'Added to TorBox')
+      const res = await torboxAdd(result.magnet)
+      setTrackedTorrents((prev) => ({
+        ...prev,
+        [key]: {
+          key,
+          title: result.title,
+          magnet: result.magnet,
+          infoHash: result.infoHash,
+          phase: 'checking',
+          torrentId: res.torrentId,
+          message: 'Checking TorBox readiness',
+          addedAt: prev[key]?.addedAt ?? Date.now(),
+          updatedAt: Date.now(),
+        },
+      }))
+      push('success', 'Torrent added to TorBox', 'Checking readiness now.')
+      if (res.torrentId || result.infoHash) {
+        setShowTracker(true)
+        scheduleReadyPoll({ key, torrentId: res.torrentId, infoHash: result.infoHash, magnet: result.magnet })
+      } else {
+        updateTracked(key, { phase: 'failed', message: 'TorBox did not return an id and this result has no info hash' })
+        push('warning', 'TorBox polling unavailable', 'The torrent was added, but no status identifier was returned.')
+      }
       dialogRef.current?.close()
     } catch (e) {
       push('error', 'TorBox add failed', e instanceof Error ? e.message : String(e))
@@ -170,6 +324,22 @@ export default function SearchPage() {
             System_Operational
           </div>
           <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em] leading-none">
+            <button
+              className={`relative w-8 h-8 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/40 hover:text-primary hover:border-primary/40'}`}
+              onClick={() => setShowTracker((v) => !v)}
+              type="button"
+              title="TORBOX_TRACKER"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {trackedList.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-sm bg-primary text-primary-content text-[8px] leading-none">
+                  {trackedList.length}
+                </span>
+              )}
+            </button>
             <span className="text-primary font-bold">{session?.username || 'ANON'}</span>
             <button 
               onClick={async () => {
@@ -185,6 +355,55 @@ export default function SearchPage() {
       </nav>
 
       <main className="flex-1 min-h-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col gap-6 overflow-hidden">
+        {showTracker && (
+          <section className="machined-card p-0.5 rounded-sm shrink-0 animate-rise">
+            <div className="bg-base-200/50 px-4 py-3 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${activeTrackCount ? 'bg-warning animate-pulse' : 'bg-success'}`} />
+                  <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">TorBox_Tracker</div>
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-widest opacity-40">
+                  ACTIVE: {activeTrackCount} / READY: {readyTrackCount}
+                </div>
+              </div>
+
+              {trackedList.length ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {trackedList.slice(0, 6).map((t) => (
+                    <div key={t.key} className={`tracker-row ${t.phase === 'ready' ? 'tracker-row-ready' : t.phase === 'failed' ? 'tracker-row-failed' : 'tracker-row-active'}`}>
+                      <div className="min-w-0">
+                        <div className="font-display text-sm font-bold uppercase tracking-tight leading-tight line-clamp-1">{t.title}</div>
+                        <div className="mt-1 font-mono text-[9px] uppercase tracking-widest opacity-50">
+                          {t.message || t.label || t.status || t.phase}
+                        </div>
+                        {t.progress !== undefined && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="torrent-progress-track">
+                              <div className={`torrent-progress-fill ${t.phase === 'ready' ? 'torrent-progress-ready' : ''}`} style={{ width: `${Math.max(0, Math.min(100, t.progress))}%` }} />
+                            </div>
+                            <span className="font-mono text-[9px] text-base-content/50 w-9 text-right">{formatProgress(t.progress)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex items-center gap-2">
+                        <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                          {t.phase}
+                        </span>
+                        <button className="btn btn-xs btn-ghost h-7 min-h-0 px-2 font-mono text-[9px]" onClick={() => removeTracked(t.key)} type="button">
+                          X
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="font-mono text-[10px] uppercase tracking-widest opacity-40">No tracked torrents.</div>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Control Center */}
         <section className="machined-card p-0.5 rounded-sm shrink-0">
           <div className="bg-base-200/40 p-5 md:p-6 flex flex-col gap-4">
@@ -378,8 +597,9 @@ export default function SearchPage() {
                         key={`${r.infoHash || r.magnet || r.title}-${idx}`}
                         r={r}
                         strictCached={strictCached}
+                        torboxState={trackedTorrents[resultKey(r)]}
                         onInspect={() => openDetails(r)}
-                        onAdd={() => void addToTorbox(r.magnet)}
+                        onAdd={() => void addToTorbox(r)}
                         onDownload={() => void downloadFromTorbox(r.magnet, r.infoHash)}
                       />
                     ))}
@@ -462,7 +682,7 @@ export default function SearchPage() {
               </button>
               <button 
                 className="btn btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
-                onClick={() => void addToTorbox(selected?.magnet)}
+                onClick={() => void addToTorbox(selected)}
                 disabled={!selected?.magnet || isModalAdding || isModalDownloading}
               >
                 {isModalAdding ? (
