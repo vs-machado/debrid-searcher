@@ -390,6 +390,17 @@ export default function SearchPage() {
                         <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
                           {t.phase}
                         </span>
+                        {t.phase === 'ready' && (
+                          <button
+                            className="btn btn-xs h-7 min-h-0 px-2 font-mono text-[9px] border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+                            onClick={() => void downloadFromTorbox(t.magnet, t.infoHash)}
+                            disabled={!t.magnet || isModalDownloading}
+                            type="button"
+                            title="DOWNLOAD_TRACKED_TORRENT"
+                          >
+                            DL
+                          </button>
+                        )}
                         <button className="btn btn-xs btn-ghost h-7 min-h-0 px-2 font-mono text-[9px]" onClick={() => removeTracked(t.key)} type="button">
                           X
                         </button>
