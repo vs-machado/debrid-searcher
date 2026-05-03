@@ -42,6 +42,7 @@ export default function SearchPage() {
     }
   })
   const [showTracker, setShowTracker] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -312,23 +313,36 @@ export default function SearchPage() {
       <ToastHost toasts={toasts} onClose={dismiss} />
 
       {/* Navigation Header */}
-      <nav className="shrink-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col md:flex-row gap-4 md:items-center justify-between border-b border-base-content/5">
+      <nav className="shrink-0 max-w-6xl w-full mx-auto px-4 md:px-6 py-3 md:py-6 flex flex-row gap-3 items-center justify-between border-b border-base-content/5">
         <div className="flex gap-3 items-center">
           <img
             src="/website_logo.png"
-            className="brand-logo shrink-0 w-10 h-10 md:w-11 md:h-11 translate-y-[1px]"
+            className="brand-logo shrink-0 w-8 h-8 md:w-11 md:h-11 translate-y-[1px]"
             alt=""
             decoding="async"
             loading="eager"
           />
           <div className="min-w-0">
-            <h1 className="font-display text-3xl md:text-3xl font-extrabold tracking-tighter leading-none uppercase">
-              DEBRID <span className="text-primary/80">SEARCHER</span>
+            <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tighter leading-none uppercase">
+              DEBRID <span className="hidden sm:inline text-primary/80">SEARCHER</span>
             </h1>
           </div>
         </div>
 
-        <div className="flex flex-col md:items-end gap-2 text-right">
+        <button
+          className="md:hidden w-9 h-9 grid place-items-center border border-base-content/10 text-base-content/70 hover:text-primary hover:border-primary/40"
+          onClick={() => setShowMobileMenu(true)}
+          type="button"
+          title="OPEN_MENU"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        </button>
+
+        <div className="hidden md:flex flex-col md:items-end gap-2 text-right">
           <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.2em] leading-none">
             <span className="text-primary font-bold">{session?.username || 'ANON'}</span>
             <button 
@@ -344,10 +358,56 @@ export default function SearchPage() {
         </div>
       </nav>
 
-      <main className="flex-1 min-h-0 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col gap-6 overflow-hidden">
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button className="absolute inset-0 bg-black/55" onClick={() => setShowMobileMenu(false)} type="button" aria-label="Close menu backdrop" />
+          <aside className="absolute right-0 top-0 h-full w-[min(20rem,86vw)] bg-base-200 border-l border-base-content/10 shadow-2xl p-5 flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-60">Menu</div>
+              <button
+                className="w-9 h-9 grid place-items-center border border-base-content/10 text-base-content/70 hover:text-primary hover:border-primary/40"
+                onClick={() => setShowMobileMenu(false)}
+                type="button"
+                title="CLOSE_MENU"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-3 border border-base-content/10 bg-base-300/40">
+              <div className="font-mono text-[9px] uppercase tracking-widest opacity-40 mb-1">Logged_In</div>
+              <div className="font-display text-xl font-bold uppercase">{session?.username || 'ANON'}</div>
+            </div>
+            <button
+              className="btn btn-outline rounded-sm justify-start font-mono uppercase tracking-widest text-[10px]"
+              onClick={() => {
+                setShowTracker((v) => !v)
+                setShowMobileMenu(false)
+              }}
+              type="button"
+            >
+              Toggle_Tracker ({trackedList.length})
+            </button>
+            <button
+              onClick={async () => {
+                await logout()
+                setShowMobileMenu(false)
+                navigate('/login')
+              }}
+              className="btn btn-ghost border border-primary/30 rounded-sm justify-start font-mono uppercase tracking-widest text-primary/80 text-[10px]"
+            >
+              Disconnect
+            </button>
+          </aside>
+        </div>
+      )}
+
+      <main className="flex-1 min-h-0 max-w-6xl w-full mx-auto px-4 md:px-6 py-4 md:py-6 flex flex-col gap-4 md:gap-6 overflow-hidden">
         {showTracker && (
           <section className="machined-card p-0.5 rounded-sm shrink-0 animate-rise">
-            <div className="bg-base-200/50 px-4 py-3 flex flex-col gap-3">
+            <div className="bg-base-200/50 px-3 md:px-4 py-3 flex flex-col gap-3 max-h-[38dvh] md:max-h-none overflow-y-auto md:overflow-visible custom-scrollbar">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full ${activeTrackCount ? 'bg-warning animate-pulse' : 'bg-success'}`} />
@@ -408,7 +468,7 @@ export default function SearchPage() {
                   <div className="font-mono text-[9px] uppercase tracking-widest opacity-35">{trackedList.length} saved</div>
                 </div>
                 {trackedList.length ? (
-                  <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto custom-scrollbar pr-1">
+                  <div className="grid grid-cols-1 gap-1.5 max-h-32 md:max-h-44 overflow-y-auto custom-scrollbar pr-1">
                     {trackedList.map((t) => (
                       <div key={`history-${t.key}`} className="tracker-history-row">
                         <div className="min-w-0">
@@ -492,8 +552,8 @@ export default function SearchPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 py-1.5 border-t border-base-content/5">
-              <div className="text-[10px] font-mono opacity-50 flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1.5 border-t border-base-content/5">
+              <div className="text-[10px] font-mono opacity-50 flex flex-wrap items-center gap-2 md:gap-4">
                 {data ? (
                   <>
                     <div>CACHE: <span className="text-success">{cachedCount}</span></div>
@@ -517,7 +577,7 @@ export default function SearchPage() {
                       <path d="M2 12h3" />
                       <path d="M19 12h3" />
                     </svg>
-                    <span className="text-[9px] uppercase tracking-widest">TRACK</span>
+                    <span className="hidden sm:inline text-[9px] uppercase tracking-widest">TRACK</span>
                   </span>
                   {trackedList.length > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 grid place-items-center rounded-sm bg-primary text-primary-content text-[8px] leading-none">
@@ -527,8 +587,8 @@ export default function SearchPage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-mono uppercase tracking-widest opacity-40">ORDER_BY</span>
+              <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3 min-w-0">
+                <span className="hidden sm:inline text-[9px] font-mono uppercase tracking-widest opacity-40">ORDER_BY</span>
                 <div className="join">
                   <button
                     className={`btn btn-xs join-item border-base-content/10 font-mono uppercase tracking-widest text-[8px] h-7 min-h-0 px-2 ${orderBy === 'relevance' ? 'btn-neutral' : 'btn-ghost'}`}
@@ -557,7 +617,7 @@ export default function SearchPage() {
                 </div>
 
                 <button 
-                  className={`text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
+                  className={`shrink-0 text-[9px] font-mono uppercase tracking-widest transition-opacity ${showAdvanced ? 'opacity-100 text-primary' : 'opacity-30 hover:opacity-100'}`}
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   type="button"
                 >

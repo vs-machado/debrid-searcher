@@ -282,6 +282,14 @@ body {
   box-shadow: 0 0 14px oklch(75% 0.15 150 / 0.26);
 }
 
+@media (max-width: 640px) {
+  .tracker-row,
+  .tracker-history-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 /* Custom scrollbar for results container */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
