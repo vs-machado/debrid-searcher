@@ -573,8 +573,8 @@ export default function SearchPage() {
               </div>
             </div>
 
-            <div className="md:hidden grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center">
-              <label className="btn btn-outline border-base-content/10 hover:bg-base-100 hover:text-primary rounded-sm h-9 min-h-0 justify-start">
+            <div className="md:hidden grid grid-cols-[auto_minmax(0,1fr)] gap-2 items-center">
+              <label className="btn btn-outline border-base-content/10 hover:bg-base-100 hover:text-primary rounded-sm h-9 min-h-0 px-3 justify-start">
                 <input
                   type="checkbox"
                   className="toggle toggle-primary toggle-xs mr-2"
@@ -585,7 +585,7 @@ export default function SearchPage() {
               </label>
               <button
                 ref={mobileFilterButtonRef}
-                className="flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm cursor-pointer touch-manipulation"
+                className="min-w-0 flex items-center justify-between gap-2 h-9 px-3 border border-base-content/10 bg-base-300/30 rounded-sm cursor-pointer touch-manipulation"
                 onClick={() => setMobileFilterOpen((open) => !open)}
                 type="button"
                 aria-expanded={mobileFilterOpen}
@@ -593,7 +593,7 @@ export default function SearchPage() {
               >
                 <span className="font-mono text-[7px] uppercase tracking-widest opacity-45">Filter</span>
                 <span className="font-mono text-[8px] uppercase tracking-widest min-w-8">
-                  {orderBy === 'relevance' ? 'Rel' : orderBy === 'size' ? 'Size' : 'Seeds'}
+                  {orderBy === 'relevance' ? 'RELEVANCE' : orderBy === 'size' ? 'Size' : 'Seeds'}
                 </span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="m6 9 6 6 6-6" />
