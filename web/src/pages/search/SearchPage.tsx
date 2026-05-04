@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import type { SearchResult, TorboxTrackedTorrent } from './types'
 import ToastHost from './components/ToastHost'
@@ -46,6 +47,10 @@ export default function SearchPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [orderBy, setOrderBy] = useState<'relevance' | 'size' | 'seeds'>('relevance')
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
+  const [mobileFilterStyle, setMobileFilterStyle] = useState<CSSProperties>({})
+  const mobileFilterButtonRef = useRef<HTMLButtonElement | null>(null)
+  const mobileFilterMenuRef = useRef<HTMLUListElement | null>(null)
   const resultsContainerRef = useRef<HTMLDivElement>(null)
   const pollTimersRef = useRef<Record<string, number>>({})
 
@@ -73,6 +78,47 @@ export default function SearchPage() {
       pollTimersRef.current = {}
     }
   }, [])
+
+  useEffect(() => {
+    if (!mobileFilterOpen) return
+
+    function positionMenu() {
+      const anchor = mobileFilterButtonRef.current
+      if (!anchor) return
+
+      const rect = anchor.getBoundingClientRect()
+      setMobileFilterStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        right: Math.max(8, window.innerWidth - rect.right),
+        zIndex: 1000,
+      })
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Node
+      if (mobileFilterButtonRef.current?.contains(target)) return
+      if (mobileFilterMenuRef.current?.contains(target)) return
+      setMobileFilterOpen(false)
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileFilterOpen(false)
+    }
+
+    positionMenu()
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('resize', positionMenu)
+    window.addEventListener('scroll', positionMenu, true)
+
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('resize', positionMenu)
+      window.removeEventListener('scroll', positionMenu, true)
+    }
+  }, [mobileFilterOpen])
 
   const results = useMemo(() => {
     if (!data) return []
@@ -310,6 +356,35 @@ export default function SearchPage() {
     <div className="h-dvh flex flex-col overflow-hidden relative text-base-content/90 font-body">
       <div className="atmo" aria-hidden="true" />
       <ToastHost toasts={toasts} onClose={dismiss} />
+      {mobileFilterOpen && createPortal(
+        <ul
+          ref={mobileFilterMenuRef}
+          className="menu p-1 bg-base-200 border border-primary/30 shadow-2xl w-32 rounded-sm"
+          style={mobileFilterStyle}
+          role="menu"
+        >
+          {[
+            ['relevance', 'Relevance'],
+            ['size', 'Size'],
+            ['seeds', 'Seeds'],
+          ].map(([value, label]) => (
+            <li key={value}>
+              <button
+                className={`rounded-sm font-mono text-[10px] uppercase tracking-widest ${orderBy === value ? 'active' : ''}`}
+                onClick={() => {
+                  setOrderBy(value as typeof orderBy)
+                  setMobileFilterOpen(false)
+                }}
+                type="button"
+                role="menuitem"
+              >
+                {label}
+              </button>
+            </li>
+          ))}
+        </ul>,
+        document.body,
+      )}
 
       {/* Navigation Header */}
       <nav className="relative z-[60] shrink-0 max-w-6xl w-full mx-auto px-4 md:px-6 py-3 md:py-6 flex flex-row gap-3 items-center justify-between border-b border-base-content/5">
@@ -452,7 +527,7 @@ export default function SearchPage() {
         )}
 
         {/* Control Center */}
-        {currentPage === 'search' && <section className="machined-card p-0.5 rounded-sm shrink-0 relative z-40 overflow-visible">
+        {currentPage === 'search' && <section className="machined-card p-0.5 rounded-sm shrink-0 relative z-[70] overflow-visible">
           <div className="bg-base-200/40 p-3 md:p-6 flex flex-col gap-3 md:gap-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-12 gap-2 md:gap-4 items-end">
               <div className="min-w-0 md:col-span-8 flex flex-col gap-2">
@@ -508,37 +583,22 @@ export default function SearchPage() {
                 />
                 <span className="text-[9px] font-mono uppercase tracking-widest">Cached</span>
               </label>
-              <details className="dropdown dropdown-end dropdown-top relative z-50">
-                <summary className="list-none flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm cursor-pointer">
-                  <span className="font-mono text-[7px] uppercase tracking-widest opacity-45">Filter</span>
-                  <span className="font-mono text-[8px] uppercase tracking-widest min-w-8">
-                    {orderBy === 'relevance' ? 'Rel' : orderBy === 'size' ? 'Size' : 'Seeds'}
-                  </span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </summary>
-                <ul className="dropdown-content z-50 mb-1 menu p-1 bg-base-200 border border-primary/30 shadow-2xl w-32 rounded-sm">
-                  {[
-                    ['relevance', 'Relevance'],
-                    ['size', 'Size'],
-                    ['seeds', 'Seeds'],
-                  ].map(([value, label]) => (
-                    <li key={value}>
-                      <button
-                        className={`rounded-sm font-mono text-[10px] uppercase tracking-widest ${orderBy === value ? 'active' : ''}`}
-                        onClick={(e) => {
-                          setOrderBy(value as typeof orderBy)
-                          e.currentTarget.closest('details')?.removeAttribute('open')
-                        }}
-                        type="button"
-                      >
-                        {label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </details>
+              <button
+                ref={mobileFilterButtonRef}
+                className="flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm cursor-pointer touch-manipulation"
+                onClick={() => setMobileFilterOpen((open) => !open)}
+                type="button"
+                aria-expanded={mobileFilterOpen}
+                aria-haspopup="menu"
+              >
+                <span className="font-mono text-[7px] uppercase tracking-widest opacity-45">Filter</span>
+                <span className="font-mono text-[8px] uppercase tracking-widest min-w-8">
+                  {orderBy === 'relevance' ? 'Rel' : orderBy === 'size' ? 'Size' : 'Seeds'}
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
             </div>
 
             <div className="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-3 py-1.5 border-t border-base-content/5">
