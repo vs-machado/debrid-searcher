@@ -331,7 +331,7 @@ export default function SearchPage() {
         <div className="md:hidden flex items-center gap-2">
           <button
             className={`relative w-9 h-9 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/60 hover:text-primary hover:border-primary/40'}`}
-            onClick={() => navigate('/history')}
+            onClick={() => navigate(currentPage === 'history' ? '/' : '/history')}
             type="button"
             title="TORRENT_HISTORY"
           >
@@ -400,8 +400,13 @@ export default function SearchPage() {
                       <div key={t.key} className={`tracker-row ${t.phase === 'ready' ? 'tracker-row-ready' : t.phase === 'failed' ? 'tracker-row-failed' : 'tracker-row-active'}`}>
                         <div className="min-w-0">
                           <div className="font-display text-sm font-bold uppercase tracking-tight leading-tight line-clamp-1">{t.title}</div>
-                          <div className="mt-1 font-mono text-[9px] uppercase tracking-widest opacity-50">
-                            {t.message || t.label || t.status || t.phase}
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                              {t.phase}
+                            </span>
+                            <span className="font-mono text-[9px] uppercase tracking-widest opacity-50">
+                              {t.message || t.label || t.status || t.phase}
+                            </span>
                           </div>
                           <div className="mt-1 font-mono text-[8px] uppercase tracking-widest opacity-35">
                             ADDED {formatTrackedTime(t.addedAt)} / UPDATED {formatTrackedTime(t.updatedAt)}
@@ -416,18 +421,16 @@ export default function SearchPage() {
                           )}
                         </div>
                         <div className="shrink-0 flex items-center gap-2">
-                          <span className={`badge badge-sm h-5 px-2 font-mono text-[8px] uppercase ${t.phase === 'ready' ? 'bg-success/10 text-success border-success/30' : t.phase === 'failed' ? 'bg-error/10 text-error border-error/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
-                            {t.phase}
-                          </span>
                           {t.phase === 'ready' && (
                             <button
-                              className="btn btn-xs h-7 min-h-0 px-2 font-mono text-[9px] border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+                              className="btn btn-sm h-9 min-h-0 px-3 font-mono text-[9px] border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 flex items-center gap-2"
                               onClick={() => void downloadFromTorbox(t.magnet, t.infoHash)}
                               disabled={!t.magnet || isModalDownloading}
                               type="button"
                               title="DOWNLOAD_FROM_HISTORY"
                             >
-                              DL
+                              <DownloadIcon className="w-3.5 h-3.5" />
+                              DOWNLOAD
                             </button>
                           )}
                           <button className="btn btn-xs btn-ghost h-7 min-h-0 px-2 font-mono text-[9px]" onClick={() => removeTracked(t.key)} type="button">
@@ -505,19 +508,37 @@ export default function SearchPage() {
                 />
                 <span className="text-[9px] font-mono uppercase tracking-widest">Cached</span>
               </label>
-              <label className="flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm">
-                <span className="font-mono text-[8px] uppercase tracking-widest opacity-45">Filter</span>
-                <select
-                  className="bg-transparent font-mono text-[9px] uppercase tracking-widest outline-none"
-                  value={orderBy}
-                  onChange={(e) => setOrderBy(e.target.value as typeof orderBy)}
-                  aria-label="Filter results"
-                >
-                  <option value="relevance">Rel</option>
-                  <option value="size">Size</option>
-                  <option value="seeds">Seeds</option>
-                </select>
-              </label>
+              <details className="dropdown dropdown-end">
+                <summary className="list-none flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm cursor-pointer">
+                  <span className="font-mono text-[7px] uppercase tracking-widest opacity-45">Filter</span>
+                  <span className="font-mono text-[8px] uppercase tracking-widest min-w-8">
+                    {orderBy === 'relevance' ? 'Rel' : orderBy === 'size' ? 'Size' : 'Seeds'}
+                  </span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </summary>
+                <ul className="dropdown-content z-30 mt-1 menu p-1 bg-base-200 border border-primary/30 shadow-2xl w-32 rounded-sm">
+                  {[
+                    ['relevance', 'Relevance'],
+                    ['size', 'Size'],
+                    ['seeds', 'Seeds'],
+                  ].map(([value, label]) => (
+                    <li key={value}>
+                      <button
+                        className={`rounded-sm font-mono text-[10px] uppercase tracking-widest ${orderBy === value ? 'active' : ''}`}
+                        onClick={(e) => {
+                          setOrderBy(value as typeof orderBy)
+                          e.currentTarget.closest('details')?.removeAttribute('open')
+                        }}
+                        type="button"
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             </div>
 
             <div className="hidden md:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-3 py-1.5 border-t border-base-content/5">
@@ -809,6 +830,16 @@ function ListIcon({ className }: { className?: string }) {
       <path d="M3 6h.01" />
       <path d="M3 12h.01" />
       <path d="M3 18h.01" />
+    </svg>
+  )
+}
+
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M12 15V3" />
     </svg>
   )
 }
