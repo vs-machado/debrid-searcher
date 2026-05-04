@@ -312,8 +312,8 @@ export default function SearchPage() {
       <ToastHost toasts={toasts} onClose={dismiss} />
 
       {/* Navigation Header */}
-      <nav className="shrink-0 max-w-6xl w-full mx-auto px-4 md:px-6 py-3 md:py-6 flex flex-row gap-3 items-center justify-between border-b border-base-content/5">
-        <div className="flex gap-3 items-center">
+      <nav className="relative z-[60] shrink-0 max-w-6xl w-full mx-auto px-4 md:px-6 py-3 md:py-6 flex flex-row gap-3 items-center justify-between border-b border-base-content/5">
+        <div className="min-w-0 flex-1 flex gap-3 items-center">
           <img
             src="/website_logo.png"
             className="brand-logo shrink-0 w-8 h-8 md:w-11 md:h-11 translate-y-[1px]"
@@ -322,13 +322,13 @@ export default function SearchPage() {
             loading="eager"
           />
           <div className="min-w-0">
-            <h1 className="font-display text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-none uppercase">
+            <h1 className="truncate font-display text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-none uppercase">
               DEBRID <span className="text-primary/80">SEARCHER</span>
             </h1>
           </div>
         </div>
 
-        <div className="md:hidden flex items-center gap-2">
+        <div className="relative z-10 shrink-0 md:hidden flex items-center gap-2">
           <button
             className={`relative w-9 h-9 grid place-items-center border transition-all ${activeTrackCount ? 'border-warning/50 text-warning bg-warning/10 animate-tracker-pulse' : readyTrackCount ? 'border-success/40 text-success bg-success/10' : 'border-base-content/10 text-base-content/60 hover:text-primary hover:border-primary/40'}`}
             onClick={() => navigate(currentPage === 'history' ? '/' : '/history')}
@@ -347,7 +347,7 @@ export default function SearchPage() {
               await logout()
               navigate('/login')
             }}
-            className="h-9 px-2 border border-primary/30 text-primary/80 font-mono text-[8px] uppercase tracking-widest"
+            className="h-9 px-2 border border-primary/30 text-primary/80 font-mono text-[8px] uppercase tracking-widest touch-manipulation"
             type="button"
           >
             Logout
@@ -452,7 +452,7 @@ export default function SearchPage() {
         )}
 
         {/* Control Center */}
-        {currentPage === 'search' && <section className="machined-card p-0.5 rounded-sm shrink-0">
+        {currentPage === 'search' && <section className="machined-card p-0.5 rounded-sm shrink-0 relative z-40 overflow-visible">
           <div className="bg-base-200/40 p-3 md:p-6 flex flex-col gap-3 md:gap-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-12 gap-2 md:gap-4 items-end">
               <div className="min-w-0 md:col-span-8 flex flex-col gap-2">
@@ -508,7 +508,7 @@ export default function SearchPage() {
                 />
                 <span className="text-[9px] font-mono uppercase tracking-widest">Cached</span>
               </label>
-              <details className="dropdown dropdown-end">
+              <details className="dropdown dropdown-end dropdown-top relative z-50">
                 <summary className="list-none flex items-center gap-2 h-9 px-2 border border-base-content/10 bg-base-300/30 rounded-sm cursor-pointer">
                   <span className="font-mono text-[7px] uppercase tracking-widest opacity-45">Filter</span>
                   <span className="font-mono text-[8px] uppercase tracking-widest min-w-8">
@@ -518,7 +518,7 @@ export default function SearchPage() {
                     <path d="m6 9 6 6 6-6" />
                   </svg>
                 </summary>
-                <ul className="dropdown-content z-30 mt-1 menu p-1 bg-base-200 border border-primary/30 shadow-2xl w-32 rounded-sm">
+                <ul className="dropdown-content z-50 mb-1 menu p-1 bg-base-200 border border-primary/30 shadow-2xl w-32 rounded-sm">
                   {[
                     ['relevance', 'Relevance'],
                     ['size', 'Size'],

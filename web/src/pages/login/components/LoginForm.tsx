@@ -27,7 +27,7 @@ export default function LoginForm() {
 
   return (
     <form
-      className="space-y-8"
+      className="space-y-5 sm:space-y-8"
       onSubmit={(e) => {
         e.preventDefault()
         void submit().then((res) => {
@@ -35,13 +35,13 @@ export default function LoginForm() {
         })
       }}
     >
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2 sm:gap-3">
         <label className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 px-2 flex justify-between">
           Username
           {submitting && <span className="text-primary animate-pulse">Syncing...</span>}
         </label>
         <input
-          className="input w-full bg-base-300/40 border border-primary/40 font-mono text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-16 rounded-sm transition-all"
+          className="input w-full bg-base-300/40 border border-primary/40 font-mono text-base sm:text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-12 sm:h-16 rounded-sm transition-all"
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
@@ -52,13 +52,13 @@ export default function LoginForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2 sm:gap-3">
         <label className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 px-2 flex justify-between">
           Access_Key
           {lockedMsLeft > 0 && <span className="text-error">LOCKOUT: {fmtCountdown(lockedMsLeft)}</span>}
         </label>
         <input
-          className="input w-full bg-base-300/40 border border-primary/40 font-mono text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-16 rounded-sm transition-all"
+          className="input w-full bg-base-300/40 border border-primary/40 font-mono text-base sm:text-lg focus:border-primary focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:opacity-20 h-12 sm:h-16 rounded-sm transition-all"
           type="password"
           autoComplete="current-password"
           placeholder="••••••••"
@@ -68,7 +68,7 @@ export default function LoginForm() {
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {result?.ok === false && result.reason === 'misconfigured' && (
           <div className="p-4 bg-warning/10 border border-warning/20 rounded-sm text-[11px] font-mono uppercase tracking-tight text-warning/80 leading-relaxed">
             [FATAL] SERVER_AUTH_MISCONFIGURED: CHECK_ENVIRONMENT_VARIABLES
@@ -88,7 +88,7 @@ export default function LoginForm() {
         )}
 
         <button 
-          className="btn btn-primary h-16 w-full rounded-sm font-mono uppercase tracking-[0.3em] group relative overflow-hidden" 
+          className="btn btn-primary h-12 sm:h-16 w-full rounded-sm font-mono uppercase tracking-[0.18em] sm:tracking-[0.3em] group relative overflow-hidden" 
           type="submit" 
           disabled={submitting || lockedMsLeft > 0}
         >
