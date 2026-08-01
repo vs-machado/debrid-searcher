@@ -24,7 +24,7 @@ The torrent indexers you configure and any torrents you search for or download a
 ## Key Features
 
 - **Authentication:** Login system with persistent sessions to protect your server instance.
-- **Search:** Simultaneous searching across multiple Prowlarr/Jackett indexers.
+  - **Search:** Simultaneous searching across multiple Prowlarr/Jackett indexers and Hydra-compatible JSON sources.
 - **Cache Verification:** Real-time checking of torrent status against TorBox cloud for immediate streaming.
 - **Advanced Controls:**
   - **Sorting:** Multi-parameter ordering by Relevance, Size, or Seeds.
@@ -55,6 +55,7 @@ Copy `server/.env.example` to `server/.env` and fill:
 - `TORBOX_BASE_URL` (TorBox API base URL; default: `https://api.torbox.app`)
 - `TORBOX_API_KEY` (Your TorBox API key)
 - `INDEXERS_TORZNAB_URLS` (One or more Torznab API endpoint URLs; include the `apikey` in the URL)
+- `INDEXERS_HYDRA_URLS` (Optional Hydra-compatible JSON source URLs; these can contain magnet links)
 - `AUTH_USERNAME` (Single-user login username)
 - `AUTH_PASSWORD` (Single-user login password)
 - `AUTH_COOKIE_SECRET` (Long random string for signing auth cookies; e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
@@ -76,6 +77,14 @@ Example `INDEXERS_TORZNAB_URLS` (Docker Compose with the included `jackett` serv
 ```env
 INDEXERS_TORZNAB_URLS=["http://jackett:9117/api/v2.0/indexers/all/results/torznab/api?apikey=YOUR_KEY"]
 ```
+
+Example `INDEXERS_HYDRA_URLS`:
+
+```env
+INDEXERS_HYDRA_URLS=["https://davidkazumi-github-io.pages.dev/fontekazumi.json","https://hydralinks.pages.dev/sources/dodi.json","https://hydralinks.pages.dev/sources/onlinefix.json","https://hydralinks.pages.dev/sources/fitgirl.json"]
+```
+
+Hydra feeds are downloaded and filtered locally for each search. Only entries with a magnet or direct HTTP(S) URI can be shown as results; TorBox cache checking requires an info hash, normally obtained from a magnet.
 
 ## Run (Development)
 
@@ -104,7 +113,7 @@ The server automatically serves the built UI from `web/dist`.
 
 ## Deploy (Docker)
 
-1) Create your env file: copy `server/.env.example` to `server/.env` and set at least `TORBOX_API_KEY`, `INDEXERS_TORZNAB_URLS`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `AUTH_COOKIE_SECRET`.
+1) Create your env file: copy `server/.env.example` to `server/.env` and set at least `TORBOX_API_KEY`, one of `INDEXERS_TORZNAB_URLS` or `INDEXERS_HYDRA_URLS`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `AUTH_COOKIE_SECRET`.
 
 2) Build and run (Docker Compose):
 
@@ -146,3 +155,5 @@ Defaults:
 - `GET /api/torbox/status?torrentId=...`: Check whether a TorBox torrent is ready to download.
 - `POST /api/torbox/download`: Request a direct download link from TorBox.
 - `GET /api/auth/session`: Check current login session.
+
+The search result `JD` action sends the TorBox direct link to JDownloader's local Click'n'Load endpoint at `http://127.0.0.1:9666/flash/add`. JDownloader must be running on the same computer as the browser with its Click'n'Load/extern interface enabled. If it is unavailable, the link is copied to the clipboard.

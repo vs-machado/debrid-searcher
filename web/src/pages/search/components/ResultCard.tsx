@@ -8,6 +8,7 @@ export default function ResultCard({
   torboxState,
   onAdd,
   onDownload,
+  onJDownloader,
   onInspect,
 }: {
   r: SearchResult
@@ -15,18 +16,22 @@ export default function ResultCard({
   torboxState?: TorboxPollState
   onAdd: () => void | Promise<void>
   onDownload: () => void | Promise<void>
+  onJDownloader: () => void | Promise<void>
   onInspect: () => void
 }) {
   const [isAdding, setIsAdding] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [isSendingToJDownloader, setIsSendingToJDownloader] = useState(false)
   const hasMagnet = !!r.magnet
   const isPolling = torboxState?.phase === 'added' || torboxState?.phase === 'checking'
   const isAddingState = isAdding || isPolling
+  const isJDownloaderState = isSendingToJDownloader
   const isCached = r.cached === true || torboxState?.phase === 'ready'
   const canAttempt = hasMagnet && (!strictCached || isCached || r.cached !== false)
 
-  const addDisabled = !hasMagnet || isAdding || isDownloading || isPolling
-  const dlDisabled = !hasMagnet || (strictCached && !isCached && r.cached === false) || isAdding || isDownloading || isPolling
+  const addDisabled = !hasMagnet || isAdding || isDownloading || isJDownloaderState || isPolling
+  const dlDisabled = !hasMagnet || (strictCached && !isCached && r.cached === false) || isAdding || isDownloading || isJDownloaderState || isPolling
+  const jdDisabled = !hasMagnet || (strictCached && !isCached && r.cached === false) || isAdding || isDownloading || isJDownloaderState || isPolling
   const cacheLabel = isCached ? 'CACHED' : isAddingState ? 'ADDING' : r.cached === false ? 'UNCACHED' : 'UNKNOWN'
   const cacheTitle = torboxState?.message || torboxState?.label || torboxState?.status || cacheLabel
   const progress = torboxState?.progress
@@ -49,6 +54,16 @@ export default function ResultCard({
       await onDownload()
     } finally {
       setIsDownloading(false)
+    }
+  }
+
+  const handleJDownloader = async () => {
+    if (jdDisabled) return
+    setIsSendingToJDownloader(true)
+    try {
+      await onJDownloader()
+    } finally {
+      setIsSendingToJDownloader(false)
     }
   }
 
@@ -110,7 +125,7 @@ export default function ResultCard({
         </div>
 
         {/* Actions module */}
-        <div className="shrink-0 flex flex-row gap-3 w-full md:w-auto">
+        <div className="shrink-0 flex flex-row gap-2 w-full md:w-auto">
           <button 
             className="btn btn-sm btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary flex-1 md:flex-none font-mono uppercase text-[10px] px-4 h-9 min-h-0 transition-all flex items-center justify-center gap-2 group/btn"
             onClick={handleAdd}
@@ -138,6 +153,20 @@ export default function ResultCard({
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             )}
             Dl
+          </button>
+          <button
+            className="btn btn-sm btn-ghost border border-accent/20 hover:border-accent/60 hover:bg-accent/5 text-accent flex-1 md:flex-none font-mono uppercase text-[10px] px-3 h-9 min-h-0 transition-all flex items-center justify-center gap-2 group/btn"
+            onClick={handleJDownloader}
+            disabled={jdDisabled}
+            type="button"
+            title="SEND_TO_JDOWNLOADER"
+          >
+            {isSendingToJDownloader ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <span className="font-black text-[9px] opacity-50 group-hover/btn:opacity-100">JD</span>
+            )}
+            JD
           </button>
         </div>
       </div>

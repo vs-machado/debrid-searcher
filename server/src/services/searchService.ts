@@ -1,10 +1,19 @@
 import type { AppEnv } from '../config/env.js'
 import { searchTorznab, type TorznabResult } from '../clients/torznab.js'
+import { hydraSourceName, searchHydraSource } from '../clients/hydra.js'
 import { torboxClient } from '../clients/torbox.js'
 import { computeRelevanceScore } from '../utils/scoring.js'
 
 export type ApiResult = TorznabResult & { cached?: boolean }
 export type SearchError = { indexer: string; message: string }
+
+function endpointName(url: string) {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url
+  }
+}
 
 export type SearchService = {
   search: (q: string) => Promise<{
@@ -21,24 +30,30 @@ export function createSearchService(env: AppEnv): SearchService {
     async search(q: string) {
       const started = Date.now()
 
-      const indexers = env.indexerUrls
-      if (!indexers.length) {
+      const endpoints = [
+        ...env.indexerUrls.map((url) => ({ kind: 'torznab' as const, url })),
+        ...env.hydraSourceUrls.map((url) => ({ kind: 'hydra' as const, url })),
+      ]
+      if (!endpoints.length) {
         return {
           query: q,
           elapsedMs: Date.now() - started,
           results: [],
           cachedResults: [],
-          errors: [{ indexer: 'config', message: 'No indexers configured. Set INDEXERS_TORZNAB_URLS in server/.env.' }],
+          errors: [{ indexer: 'config', message: 'No sources configured. Set INDEXERS_TORZNAB_URLS or INDEXERS_HYDRA_URLS in server/.env.' }],
         }
       }
 
-      const settled = await Promise.allSettled(indexers.map((u) => searchTorznab(u, q)))
+      const settled = await Promise.allSettled(
+        endpoints.map((endpoint) => endpoint.kind === 'torznab' ? searchTorznab(endpoint.url, q) : searchHydraSource(endpoint.url, q)),
+      )
       const errors: SearchError[] = []
       const merged: ApiResult[] = []
 
       for (let i = 0; i < settled.length; i++) {
         const s = settled[i]
-        const indexer = new URL(indexers[i]).hostname
+        const endpoint = endpoints[i]
+        const indexer = endpoint.kind === 'hydra' ? hydraSourceName(endpoint.url) : endpointName(endpoint.url)
         if (s.status === 'fulfilled') {
           for (const r of s.value) merged.push({ ...r, indexer: r.indexer || indexer })
         } else {

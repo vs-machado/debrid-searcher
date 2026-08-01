@@ -4,6 +4,7 @@ export type AppEnv = {
   torboxRelayBaseUrl: string
   torboxApiKey?: string
   indexerUrls: string[]
+  hydraSourceUrls: string[]
   logHttp: boolean
   logHttpBody: boolean
   authUsername?: string
@@ -30,14 +31,14 @@ function parseOptionalBool(raw: string | undefined): boolean | undefined {
   throw new Error('AUTH_COOKIE_SECURE must be a boolean (true/false)')
 }
 
-function parseIndexerUrls(raw: string | undefined) {
+function parseUrls(raw: string | undefined, variableName: string) {
   if (!raw) return []
   const s = raw.trim()
   if (!s) return []
 
   if (s.startsWith('[')) {
     const arr = JSON.parse(s) as unknown
-    if (!Array.isArray(arr)) throw new Error('INDEXERS_TORZNAB_URLS must be a JSON array')
+    if (!Array.isArray(arr)) throw new Error(`${variableName} must be a JSON array`)
     return arr.map(String).map((v) => v.trim()).filter(Boolean)
   }
 
@@ -54,7 +55,8 @@ export function readEnv(): AppEnv {
   const torboxBaseUrl = (process.env.TORBOX_BASE_URL || 'https://api.torbox.app').replace(/\/+$/, '')
   const torboxRelayBaseUrl = (process.env.TORBOX_RELAY_BASE_URL || 'https://relay.torbox.app').replace(/\/+$/, '')
   const torboxApiKey = process.env.TORBOX_API_KEY?.trim() || undefined
-  const indexerUrls = parseIndexerUrls(process.env.INDEXERS_TORZNAB_URLS)
+  const indexerUrls = parseUrls(process.env.INDEXERS_TORZNAB_URLS, 'INDEXERS_TORZNAB_URLS')
+  const hydraSourceUrls = parseUrls(process.env.INDEXERS_HYDRA_URLS, 'INDEXERS_HYDRA_URLS')
 
   const logHttp = parseBool(process.env.LOG_HTTP, true)
   const logHttpBody = parseBool(process.env.LOG_HTTP_BODY, false)
@@ -70,6 +72,7 @@ export function readEnv(): AppEnv {
     torboxRelayBaseUrl,
     torboxApiKey,
     indexerUrls,
+    hydraSourceUrls,
     logHttp,
     logHttpBody,
     authUsername,

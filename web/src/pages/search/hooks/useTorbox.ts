@@ -18,7 +18,7 @@ export function useTorbox(params: {
   )
 
   const download = useCallback(
-    async (input: { magnet: string; infoHash?: string }) => {
+    async (input: { magnet: string; infoHash?: string }, options?: { open?: boolean }) => {
       const res = await apiPost<DownloadResponse>('/api/torbox/download', {
         magnet: input.magnet,
         infoHash: input.infoHash,
@@ -26,7 +26,7 @@ export function useTorbox(params: {
         zipLink: params.zipLink,
       })
 
-      if (res.url && params.onLinkReady) params.onLinkReady(res.url)
+      if (options?.open !== false && res.url && params.onLinkReady) params.onLinkReady(res.url)
       return res
     },
     [params.strictCached, params.zipLink, params.onLinkReady],

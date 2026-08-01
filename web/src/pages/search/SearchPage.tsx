@@ -5,6 +5,7 @@ import type { SearchResult, TorboxTrackedTorrent } from './types'
 import ToastHost from './components/ToastHost'
 import ResultCard from './components/ResultCard'
 import { fmtBytes } from './lib/format'
+import { sendToJDownloader } from './lib/jdownloader'
 import { useToasts } from './hooks/useToasts'
 import { useClipboard } from './hooks/useClipboard'
 import { useSearch } from './hooks/useSearch'
@@ -33,6 +34,7 @@ export default function SearchPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [isModalAdding, setIsModalAdding] = useState(false)
   const [isModalDownloading, setIsModalDownloading] = useState(false)
+  const [isModalJDownloader, setIsModalJDownloader] = useState(false)
   const [trackedTorrents, setTrackedTorrents] = useState<Record<string, TorboxTrackedTorrent>>(() => {
     try {
       const raw = window.localStorage.getItem(TORRENT_HISTORY_KEY)
@@ -344,6 +346,35 @@ export default function SearchPage() {
       push('error', 'TorBox download failed', e instanceof Error ? e.message : String(e))
     } finally {
       setIsModalDownloading(false)
+    }
+  }
+
+  async function downloadToJDownloader(result?: SearchResult | null) {
+    if (!result?.magnet) return
+    setIsModalJDownloader(true)
+    try {
+      const res = await torboxDownload({ magnet: result.magnet, infoHash: result.infoHash }, { open: false })
+      if (!res.url) {
+        push('error', 'No JDownloader URL returned')
+        return
+      }
+
+      try {
+        await sendToJDownloader(res.url, result.title)
+        push('success', 'Sent to JDownloader', 'The link was added to the local JDownloader LinkGrabber.')
+        dialogRef.current?.close()
+      } catch {
+        try {
+          await copyText(res.url)
+          push('warning', 'JDownloader not detected', 'The TorBox link was copied to the clipboard.')
+        } catch {
+          push('error', 'JDownloader unavailable', 'Start JDownloader and enable its local API on port 9666.')
+        }
+      }
+    } catch (e) {
+      push('error', 'JDownloader link failed', e instanceof Error ? e.message : String(e))
+    } finally {
+      setIsModalJDownloader(false)
     }
   }
 
@@ -767,6 +798,7 @@ export default function SearchPage() {
                         onInspect={() => openDetails(r)}
                         onAdd={() => addToTorbox(r)}
                         onDownload={() => downloadFromTorbox(r.magnet, r.infoHash)}
+                        onJDownloader={() => downloadToJDownloader(r)}
                       />
                     ))}
                   </div>
@@ -849,7 +881,7 @@ export default function SearchPage() {
               <button 
                 className="btn btn-ghost border border-secondary/20 hover:border-secondary/60 hover:bg-secondary/5 text-secondary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
                 onClick={() => void addToTorbox(selected)}
-                disabled={!selected?.magnet || isModalAdding || isModalDownloading}
+                disabled={!selected?.magnet || isModalAdding || isModalDownloading || isModalJDownloader}
               >
                 {isModalAdding ? (
                   <span className="loading loading-spinner loading-xs" />
@@ -861,7 +893,7 @@ export default function SearchPage() {
               <button 
                 className="btn btn-ghost border border-primary/20 hover:border-primary/60 hover:bg-primary/5 text-primary px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
                 onClick={() => void downloadFromTorbox(selected?.magnet, selected?.infoHash)}
-                disabled={!selected?.magnet || (strictCached && selected?.cached === false) || isModalAdding || isModalDownloading}
+                disabled={!selected?.magnet || (strictCached && selected?.cached === false) || isModalAdding || isModalDownloading || isModalJDownloader}
               >
                 {isModalDownloading ? (
                   <span className="loading loading-spinner loading-xs" />
@@ -869,6 +901,18 @@ export default function SearchPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 group-hover/btn:opacity-100 transition-opacity"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 )}
                 Execute_Download
+              </button>
+              <button
+                className="btn btn-ghost border border-accent/20 hover:border-accent/60 hover:bg-accent/5 text-accent px-8 rounded-sm font-mono text-[11px] uppercase tracking-widest transition-all h-12 flex items-center gap-3 group/btn"
+                onClick={() => void downloadToJDownloader(selected)}
+                disabled={!selected?.magnet || (strictCached && selected?.cached === false) || isModalAdding || isModalDownloading || isModalJDownloader}
+              >
+                {isModalJDownloader ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <span className="font-black text-[10px] opacity-50 group-hover/btn:opacity-100">JD</span>
+                )}
+                Send_To_JDownloader
               </button>
             </div>
           </div>

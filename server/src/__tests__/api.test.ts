@@ -10,6 +10,7 @@ function makeEnv(partial?: Partial<AppEnv>): AppEnv {
     torboxRelayBaseUrl: 'https://relay.torbox.app',
     torboxApiKey: undefined,
     indexerUrls: [],
+    hydraSourceUrls: [],
     logHttp: false,
     logHttpBody: false,
     authUsername: 'admin',
@@ -104,6 +105,33 @@ describe('api', () => {
     expect(res.status).toBe(200)
     expect(res.body?.ok).toBe(true)
     expect(res.body?.torrentId).toBe(321)
+  })
+
+  it('POST /api/torbox/download returns a direct link for JDownloader', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: { torrent_id: 321 } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: 'https://cdn.example.test/file.zip' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }))
+
+    const app = createApp(makeEnv({ torboxApiKey: 'tb-key' }))
+    const agent = request.agent(app)
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'pw' }).expect(200)
+
+    const res = await agent.post('/api/torbox/download').send({
+      magnet: 'magnet:?xt=urn:btih:abc',
+      zipLink: true,
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.body?.ok).toBe(true)
+    expect(res.body?.torrentId).toBe(321)
+    expect(res.body?.url).toBe('https://cdn.example.test/file.zip')
+    expect(String(vi.mocked(globalThis.fetch).mock.calls[1]?.[0])).toContain('/v1/api/torrents/requestdl')
   })
 
   it('GET /api/torbox/status reports ready with progress for a cached TorBox torrent', async () => {
